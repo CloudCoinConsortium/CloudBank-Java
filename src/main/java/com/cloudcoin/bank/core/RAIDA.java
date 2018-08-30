@@ -84,6 +84,14 @@ public class RAIDA {
         logger.Info(message);
     }
 
+    public ArrayList<CompletableFuture<Response>> getEchoTasks() {
+        ArrayList<CompletableFuture<Response>> echoTasks = new ArrayList<>();
+        for (int i = 0; i < nodes.length; i++) {
+            echoTasks.add(nodes[i].Echo());
+        }
+        return echoTasks;
+    }
+
     /** Prepares 25 ping tests to RAIDA severs*/
     public static void initializeRaidaEcho() {
         List<Callable<Void>> taskList = new ArrayList<>();
@@ -165,11 +173,20 @@ public class RAIDA {
         return this.status;
     }
 
-    public int ReadyCount() {
+    public int getReadyCount() {
         int counter = 0;
         for (Node node : nodes) {
-            if node.
+            if (Node.NodeStatus.Ready == node.RAIDANodeStatus)
+                counter++;
         }
+        return counter;
     }
-    public int NotReadyCount() { return nodes.Where(x => x.RAIDANodeStatus == NodeStatus.NotReady).Count(); } }
+    public int getNotReadyCount() {
+        int counter = 0;
+        for (Node node : nodes) {
+            if (Node.NodeStatus.NotReady == node.RAIDANodeStatus)
+                counter++;
+        }
+        return counter;
+    }
 }
