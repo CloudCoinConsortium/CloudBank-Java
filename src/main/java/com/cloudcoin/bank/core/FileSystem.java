@@ -20,6 +20,9 @@ public class FileSystem {
 
     public String RootPath;
 
+    public static String BankPath = File.separator + Config.TAG_BANK + File.separator;
+    public static String FrackedPath = File.separator + Config.TAG_FRACKED + File.separator;
+
     public String DetectedFolder;
     public String SuspectFolder;
     public String ExportFolder;
@@ -47,8 +50,8 @@ public class FileSystem {
         DetectedFolder = RootPath + File.separator + Config.TAG_DETECTED + File.separator;
         SuspectFolder = RootPath + File.separator + Config.TAG_SUSPECT + File.separator;
 
-        BankFolder = RootPath + File.separator + Config.TAG_BANK + File.separator;
-        CounterfeitFolder = RootPath + File.separator + Config.TAG_COUNTERFEIT + File.separator;
+        BankFolder = RootPath + BankPath;
+        CounterfeitFolder = RootPath + FrackedPath;
         FrackedFolder = RootPath + File.separator + Config.TAG_FRACKED + File.separator;
 
         LogsFolder = RootPath + File.separator + Config.TAG_LOGS + File.separator;
