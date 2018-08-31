@@ -31,22 +31,9 @@ public class FileUtils {
      * @param filename
      * @return an unused filename
      */
-    public static String ensureFilenameUnique(String filename, String extension) {
-        if (!Files.exists(Paths.get(filename + extension)))
-            return filename;
-
-        filename = filename + '.';
-        String newFilename;
-        int loopCount = 0;
-        do {
-            newFilename = filename + Integer.toString(++loopCount);
-        }
-        while (Files.exists(Paths.get(newFilename + extension)));
-        return newFilename;
-    }
     public static String ensureFilenameUnique(String filename, String extension, String folder) {
         if (!Files.exists(Paths.get(folder + filename + extension)))
-            return filename;
+            return folder + filename + extension;
 
         filename = filename + '.';
         String newFilename;
@@ -55,7 +42,7 @@ public class FileUtils {
             newFilename = filename + Integer.toString(++loopCount);
         }
         while (Files.exists(Paths.get(folder + newFilename + extension)));
-        return newFilename;
+        return folder + newFilename + extension;
     }
 
     public static String randomString(int length) {

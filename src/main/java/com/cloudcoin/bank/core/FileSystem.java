@@ -154,6 +154,16 @@ public class FileSystem {
      * @param cloudCoins the ArrayList of CloudCoins to delete.
      * @param folder     the folder to delete from.
      */
+    public static void removeCoins(CloudCoin[] cloudCoins, String folder) {
+        for (CloudCoin coin : cloudCoins) {
+            try {
+                Files.deleteIfExists(Paths.get(folder + CoinUtils.generateFilename(coin) + ".stack"));
+            } catch (IOException e) {
+                System.out.println(e.getLocalizedMessage());
+                e.printStackTrace();
+            }
+        }
+    }
     public static void removeCoins(ArrayList<CloudCoin> cloudCoins, String folder) {
         for (CloudCoin coin : cloudCoins) {
             try {
@@ -172,11 +182,14 @@ public class FileSystem {
      * @param filePath the absolute filepath of the CloudCoin file, without the extension.
      */
     public static String writeCoinsToSingleStack(ArrayList<CloudCoin> coins, String filePath) {
+        return writeCoinsToSingleStack(coins.toArray(new CloudCoin[0]), filePath);
+    }
+    public static String writeCoinsToSingleStack(CloudCoin[] coins, String filePath) {
         Gson gson = Utils.createGson();
         try {
-            Stack stack = new Stack(coins.toArray(new CloudCoin[0]));
+            Stack stack = new Stack(coins);
             String json = gson.toJson(stack);
-            Files.write(Paths.get(filePath + ".stack"), json.getBytes());
+            Files.write(Paths.get(filePath), json.getBytes());
             return json;
         } catch (IOException e) {
             System.out.println(e.getLocalizedMessage());

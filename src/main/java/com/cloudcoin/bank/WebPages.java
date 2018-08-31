@@ -10,10 +10,10 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Date;
@@ -46,7 +46,7 @@ public class WebPages {
     @RequestMapping(value = "/echo", method = RequestMethod.GET)
     public String echo(@RequestParam(required = false, value = "account") String account,
                        @RequestParam(required = false, value = "pk") String key) {
-        String badLogin = isAccountValid(account, key);
+        String badLogin = isAccountAndPasswordValid(account, key);
         if (badLogin != null)
             return badLogin;
 
@@ -56,7 +56,7 @@ public class WebPages {
     @RequestMapping(value = "/show_coins", method = RequestMethod.GET)
     public String show_coins(@RequestParam(required = false, value = "account") String account,
                              @RequestParam(required = false, value = "pk") String key) {
-        String badLogin = isAccountValid(account, key);
+        String badLogin = isAccountAndPasswordValid(account, key);
         if (badLogin != null)
             return badLogin;
 
@@ -82,7 +82,7 @@ public class WebPages {
     public String depositStack(@RequestParam(required = false, value = "account") String account,
                                @RequestParam(required = false, value = "pk") String key,
                                @RequestParam(required = false, value = "stack") String stack) {
-        String badLogin = isAccountValid(account, key);
+        String badLogin = isAccountAndPasswordValid(account, key);
         if (badLogin != null)
             return badLogin;
 
@@ -103,8 +103,11 @@ public class WebPages {
         try {
             if (coins == null || coins.size() == 0)
                 Files.write(Paths.get(accountFolder + FileSystem.TrashPath + new Date().toString()), stackBytes);
-            else
-                FileSystem.writeCoinsToSingleStack(coins, accountFolder + FileSystem.SuspectPath + CoinUtils.generateFilename(coins.get(0)));
+            else {
+                String filename = CoinUtils.generateFilename(coins.get(0));
+                filename = FileUtils.ensureFilenameUnique(filename, ".stack", accountFolder + FileSystem.SuspectPath);
+                FileSystem.writeCoinsToSingleStack(coins, filename);
+            }
         } catch (IOException e) {
             e.printStackTrace();
             coins = null;
@@ -130,7 +133,7 @@ public class WebPages {
     public String withdrawStack(@RequestParam(required = false, value = "account") String account,
                                 @RequestParam(required = false, value = "pk") String key,
                                 @RequestParam(required = false, value = "amount") String amountInput) {
-        String badLogin = isAccountValid(account, key);
+        String badLogin = isAccountAndPasswordValid(account, key);
         if (badLogin != null)
             return badLogin;
 
@@ -229,8 +232,8 @@ public class WebPages {
         exportCoins.addAll(hundredsToExport);
         exportCoins.addAll(twoFiftiesToExport);
 
-        String filename = (accountFolder + FileSystem.ExportPath + totalSaved + ".CloudCoin");
-        filename = FileUtils.ensureFilenameUnique(filename, ".stack");
+        String filename = (totalSaved + ".CloudCoin");
+        filename = FileUtils.ensureFilenameUnique(filename, ".stack", accountFolder + FileSystem.ExportPath);
         String stack = FileSystem.writeCoinsToSingleStack(exportCoins, filename);
         if (stack != null) {
             FileSystem.removeCoins(exportCoins, accountFolder + FileSystem.BankPath);
@@ -242,37 +245,85 @@ public class WebPages {
         return Utils.createGson().toJson(response);
     }
 
+    @RequestMapping(value = "/get_receipt", method = {RequestMethod.POST, RequestMethod.GET})
+    public String getReceipt(@RequestParam(required = false, value = "account") String account,
+                             @RequestParam(required = false, value = "rn") String receiptId) {
+        String accountResponse = isAccountValid(account);
+        if ('{' == accountResponse.charAt(0))
+            return accountResponse;
+
+        ServiceResponse response = new ServiceResponse();
+        response.bankServer = "localhost";
+
+        if (receiptId == null) {
+            response.message = "Request Error: Receipt Number or Account ID not specified";
+            return Utils.createGson().toJson(response);
+        }
+
+        try {
+            Path receiptPath = Paths.get(FileSystem.AccountFolder + accountResponse + FileSystem.ReceiptsPath + receiptId + ".json");
+            if (!Files.exists(receiptPath)) {
+                response.message = "Receipt not correct.";
+                response.account = account;
+                return Utils.createGson().toJson(response);
+            }
+
+            return new String(Files.readAllBytes(receiptPath), StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            response.message = "Request Error: Private key or Account not found.";
+            e.printStackTrace();
+            return Utils.createGson().toJson(response);
+        }
+    }
+
 
     /* Methods */
 
-    String isAccountValid(String account, String key) {
+    private String isAccountValid(String account) {
         ServiceResponse response = new ServiceResponse();
+        response.bankServer = "localhost";
         try {
-            response.bankServer = "localhost";
-
-            if (key == null || account == null) {
+            if (account == null) {
                 response.message = "Request Error: Private key or Account not specified.";
                 return Utils.createGson().toJson(response);
             }
 
-            String text;
-            text = new String(Files.readAllBytes(Paths.get(FileSystem.PasswordFolder + account + ".txt")), StandardCharsets.UTF_8);
-
-            if (!text.equals(key)) {
+            String key = new String(Files.readAllBytes(Paths.get(FileSystem.PasswordFolder + account + ".txt")), StandardCharsets.UTF_8);
+            if (0 == key.length()) {
                 response.message = "Private key not correct.";
                 response.account = account;
                 return Utils.createGson().toJson(response);
             }
+            return key;
         } catch (IOException e) {
             response.message = "Request Error: Private key or Account not found.";
             e.printStackTrace();
+            return Utils.createGson().toJson(response);
+        }
+    }
+
+    private String isAccountAndPasswordValid(String account, String key) {
+        String accountResponse = isAccountValid(account);
+        if ('{' == accountResponse.charAt(0))
+            return accountResponse;
+
+        ServiceResponse response = new ServiceResponse();
+        response.bankServer = "localhost";
+
+        if (key == null) {
+            response.message = "Request Error: Private key or Account not specified.";
+            return Utils.createGson().toJson(response);
+        }
+        if (!key.equals(accountResponse)) {
+            response.message = "Private key not correct.";
+            response.account = account;
             return Utils.createGson().toJson(response);
         }
 
         return null;
     }
 
-    public String EchoRaida() {
+    private String EchoRaida() {
         RAIDA raida = RAIDA.getInstance();
         ArrayList<CompletableFuture<Response>> tasks = raida.getEchoTasks();
         try {
@@ -304,7 +355,7 @@ public class WebPages {
         response.bankServer = "localhost";
 
         response.receipt = multi_detect(accountFolder);
-        Grader.gradeSuspectFolder(accountFolder);
+        Grader.gradeDetectedFolder(accountFolder);
         response.status = "importing";
         response.message = "The stack file has been imported and detection will begin automatically so long as they are not already in bank. Please check your receipt.";
 
@@ -312,12 +363,12 @@ public class WebPages {
         return Utils.createGson().toJson(response);
     }
 
-    public static String multi_detect(String accountPath) {
+    private static String multi_detect(String accountPath) {
         MultiDetect multiDetector = new MultiDetect();
         String receiptFileName = FileUtils.randomString(16);
 
         try {
-            multiDetector.detectMulti(20000, receiptFileName, accountPath).get();
+            multiDetector.detectMulti(receiptFileName, accountPath).get();
         } catch (InterruptedException | ExecutionException e) {
             e.printStackTrace();
         }

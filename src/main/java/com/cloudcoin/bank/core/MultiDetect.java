@@ -4,7 +4,6 @@ import com.cloudcoin.bank.utils.CoinUtils;
 import com.cloudcoin.bank.utils.FileUtils;
 import com.cloudcoin.bank.utils.Utils;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -14,12 +13,11 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.TimeZone;
 import java.util.concurrent.CompletableFuture;
 
 public class MultiDetect {
 
-    public CompletableFuture detectMulti(int detectTime, String receiptFile, String folderPath) {
+    public CompletableFuture detectMulti(String receiptFilename, String folderPath) {
         return CompletableFuture.supplyAsync(() -> {
             boolean stillHaveSuspect = true;
             int coinNames = 0;
@@ -43,7 +41,7 @@ public class MultiDetect {
                     stillHaveSuspect = false;
 
                 CloudCoin[] coins = new CloudCoin[coinNames];
-                Receipt receipt = createReceipt(coinNames, receiptFile);
+                Receipt receipt = createReceipt(coinNames, receiptFilename);
 
                 for (int i = 0; i < coinNames; i++) {
                     System.out.println("md dm: file: " + folderPath + FileSystem.SuspectPath + suspectFileNames[i]);
@@ -108,7 +106,8 @@ public class MultiDetect {
                 }
 
                 try {
-                    Files.write(Paths.get(folderPath + FileSystem.ReceiptsPath + receiptFile + ".json"), receiptFile.getBytes(StandardCharsets.UTF_8));
+                    String json = Utils.createGson().toJson(receipt);
+                    Files.write(Paths.get(folderPath + FileSystem.ReceiptsPath + receiptFilename + ".json"), json.getBytes(StandardCharsets.UTF_8));
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -129,12 +128,13 @@ public class MultiDetect {
                             pownString.append(raida.nodes[k].MultiResponse.responses[j].outcome, 0, 1);
                         coin.setPown(pownString.toString());
                     }
+                    String filename = CoinUtils.generateFilename(coins[0]);
+                    filename = FileUtils.ensureFilenameUnique(filename, ".stack", folderPath + FileSystem.DetectedPath);
+                    FileSystem.writeCoinsToSingleStack(coins, filename);
+                    FileSystem.removeCoins(coins, folderPath + FileSystem.SuspectPath);
                 } catch (Exception e) {
                     System.out.println("RAIDA#PNC: " + e.getLocalizedMessage());
-                }/* catch (Exception e) {
-                    System.out.println("RAIDA#PNC: " + e.getLocalizedMessage());
-                    e.printStackTrace();
-                }*/
+                }
             }
             return "";
         });
