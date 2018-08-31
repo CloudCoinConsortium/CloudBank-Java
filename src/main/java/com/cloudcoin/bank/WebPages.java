@@ -5,11 +5,12 @@ import com.cloudcoin.bank.json.ServiceResponse;
 import com.cloudcoin.bank.utils.CoinUtils;
 import com.cloudcoin.bank.utils.FileUtils;
 import com.cloudcoin.bank.utils.Utils;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.annotation.RequestMapping;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -77,7 +78,7 @@ public class WebPages {
         return Utils.createGson().toJson(response);
     }
 
-    @RequestMapping(value = "/deposit_one_stack", method = { RequestMethod.POST, RequestMethod.GET })
+    @RequestMapping(value = "/deposit_one_stack", method = {RequestMethod.POST, RequestMethod.GET})
     public String depositStack(@RequestParam(required = false, value = "account") String account,
                                @RequestParam(required = false, value = "pk") String key,
                                @RequestParam(required = false, value = "stack") String stack) {
@@ -122,6 +123,122 @@ public class WebPages {
 
         response.message = "There was a server error, try again later.";
         response.status = "error";
+        return Utils.createGson().toJson(response);
+    }
+
+    @RequestMapping(value = "/withdraw_one_stack", method = {RequestMethod.POST, RequestMethod.GET})
+    public String withdrawStack(@RequestParam(required = false, value = "account") String account,
+                                @RequestParam(required = false, value = "pk") String key,
+                                @RequestParam(required = false, value = "amount") String amountInput) {
+        String badLogin = isAccountValid(account, key);
+        if (badLogin != null)
+            return badLogin;
+
+        ServiceResponse response = new ServiceResponse();
+        response.bankServer = "localhost";
+
+        int amount;
+        try {
+            amount = Integer.parseInt(amountInput);
+        } catch (NumberFormatException ex) {
+            response.message = "Request Error: Amount of CloudCoins is invalid.";
+            return Utils.createGson().toJson(response);
+        }
+        if (amount == 0) {
+            response.message = "Request Error: Amount of CloudCoins is invalid.";
+            return Utils.createGson().toJson(response);
+        }
+
+        String accountFolder = FileSystem.AccountFolder + key;
+
+        int[] bankTotals = Banker.countCoins(accountFolder + FileSystem.BankPath);
+        int[] frackedTotals = Banker.countCoins(accountFolder + FileSystem.FrackedPath);
+        int AvailableCoins = ((bankTotals[5] + frackedTotals[5]) * 250) + ((bankTotals[4] + frackedTotals[4]) * 100) + ((bankTotals[3] + frackedTotals[3]) * 25) + ((bankTotals[2] + frackedTotals[2]) * 5) + ((bankTotals[1] + frackedTotals[1]) * 1);
+        if (amount > AvailableCoins) {
+            response.message = "Request Error: Amount of CloudCoins not available ";
+            return Utils.createGson().toJson(response);
+        }
+        int exp_1 = 0;
+        int exp_5 = 0;
+        int exp_25 = 0;
+        int exp_100 = 0;
+        int exp_250 = 0;
+        if (amount >= 250 && bankTotals[5] + frackedTotals[5] > 0) {
+            exp_250 = ((amount / 250) < (bankTotals[5] + frackedTotals[5])) ? (amount / 250) : (bankTotals[5] + frackedTotals[5]);
+            amount -= (exp_250 * 250);
+        }
+        if (amount >= 100 && bankTotals[4] + frackedTotals[4] > 0) {
+            exp_100 = ((amount / 100) < (bankTotals[4] + frackedTotals[4])) ? (amount / 100) : (bankTotals[4] + frackedTotals[4]);
+            amount -= (exp_100 * 100);
+        }
+        if (amount >= 25 && bankTotals[3] + frackedTotals[3] > 0) {
+            exp_25 = ((amount / 25) < (bankTotals[3] + frackedTotals[3])) ? (amount / 25) : (bankTotals[3] + frackedTotals[3]);
+            amount -= (exp_25 * 25);
+        }
+        if (amount >= 5 && bankTotals[2] + frackedTotals[2] > 0) {
+            exp_5 = ((amount / 5) < (bankTotals[2] + frackedTotals[2])) ? (amount / 5) : (bankTotals[2] + frackedTotals[2]);
+            amount -= (exp_5 * 5);
+        }
+        if (amount >= 1 && bankTotals[1] + frackedTotals[1] > 0) {
+            exp_1 = (amount < (bankTotals[1] + frackedTotals[1])) ? amount : (bankTotals[1] + frackedTotals[1]);
+            amount -= (exp_1);
+        }
+
+        // Get the CloudCoins that will be used for the export.
+        int totalSaved = exp_1 + (exp_5 * 5) + (exp_25 * 25) + (exp_100 * 100) + (exp_250 * 250);
+        ArrayList<CloudCoin> totalCoins = FileSystem.loadFolderCoins(accountFolder + FileSystem.BankPath);
+        totalCoins.addAll(FileSystem.loadFolderCoins(accountFolder + FileSystem.FrackedPath));
+
+        ArrayList<CloudCoin> onesToExport = new ArrayList<>();
+        ArrayList<CloudCoin> fivesToExport = new ArrayList<>();
+        ArrayList<CloudCoin> qtrToExport = new ArrayList<>();
+        ArrayList<CloudCoin> hundredsToExport = new ArrayList<>();
+        ArrayList<CloudCoin> twoFiftiesToExport = new ArrayList<>();
+
+        for (int i = 0, totalCoinsSize = totalCoins.size(); i < totalCoinsSize; i++) {
+            CloudCoin coin = totalCoins.get(i);
+            int denomination = CoinUtils.getDenomination(coin);
+            if (denomination == 1) {
+                if (exp_1-- > 0) onesToExport.add(coin);
+                else exp_1 = 0;
+            } else if (denomination == 5) {
+                if (exp_5-- > 0) fivesToExport.add(coin);
+                else exp_5 = 0;
+            } else if (denomination == 25) {
+                if (exp_25-- > 0) qtrToExport.add(coin);
+                else exp_25 = 0;
+            } else if (denomination == 100) {
+                if (exp_100-- > 0) hundredsToExport.add(coin);
+                else exp_100 = 0;
+            } else if (denomination == 250) {
+                if (exp_250-- > 0) twoFiftiesToExport.add(coin);
+                else exp_250 = 0;
+            }
+        }
+
+        if (onesToExport.size() < exp_1 || fivesToExport.size() < exp_5 || qtrToExport.size() < exp_25
+                || hundredsToExport.size() < exp_100 || twoFiftiesToExport.size() < exp_250) {
+            response.message = "Request Error: Not enough CloudCoins for export.";
+            return Utils.createGson().toJson(response);
+        }
+
+        ArrayList<CloudCoin> exportCoins = new ArrayList<>();
+        exportCoins.addAll(onesToExport);
+        exportCoins.addAll(fivesToExport);
+        exportCoins.addAll(qtrToExport);
+        exportCoins.addAll(hundredsToExport);
+        exportCoins.addAll(twoFiftiesToExport);
+
+        String filename = (accountFolder + FileSystem.ExportPath + totalSaved + ".CloudCoin");
+        filename = FileUtils.ensureFilenameUnique(filename, ".stack");
+        String stack = FileSystem.writeCoinsToSingleStack(exportCoins, filename);
+        if (stack != null) {
+            FileSystem.removeCoins(exportCoins, accountFolder + FileSystem.BankPath);
+            FileSystem.removeCoins(exportCoins, accountFolder + FileSystem.FrackedPath);
+            return stack;
+        }
+
+        response.message = "Request Error: Unable to withdraw CloudCoins. Please try again.";
         return Utils.createGson().toJson(response);
     }
 
