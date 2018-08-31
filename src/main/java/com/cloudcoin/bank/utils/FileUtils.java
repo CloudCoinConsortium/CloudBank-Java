@@ -77,6 +77,23 @@ public class FileUtils {
     }
 
     /**
+     * Loads an array of CloudCoins from a Stack JSON String.
+     *
+     * @param json the JSON string of the Stack file.
+     * @return ArrayList of CloudCoins.
+     */
+    public static ArrayList<CloudCoin> loadCloudCoinsFromStackJson(String json) {
+        try {
+            Stack stack = Utils.createGson().fromJson(json, Stack.class);
+            return new ArrayList<>(Arrays.asList(stack.cc));
+        } catch (JsonSyntaxException e) {
+            System.out.println(e.getLocalizedMessage());
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    /**
      * Returns an array containing all filenames in a directory.
      *
      * @param folderPath the folder to check for files.
@@ -90,6 +107,7 @@ public class FileUtils {
 
             if (null != filenames) {
                 for (File file : filenames) {
+                    System.out.println("found file " + file.toString());
                     if (file.isFile()) {
                         files.add(file.getName());
                     }

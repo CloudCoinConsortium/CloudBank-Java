@@ -1,10 +1,8 @@
 package com.cloudcoin.bank;
 
-import com.cloudcoin.bank.core.Banker;
-import com.cloudcoin.bank.core.FileSystem;
-import com.cloudcoin.bank.core.RAIDA;
-import com.cloudcoin.bank.core.Response;
+import com.cloudcoin.bank.core.*;
 import com.cloudcoin.bank.json.ServiceResponse;
+import com.cloudcoin.bank.utils.CoinUtils;
 import com.cloudcoin.bank.utils.FileUtils;
 import com.cloudcoin.bank.utils.Utils;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -17,8 +15,9 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Optional;
+import java.util.Date;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 @RestController
 public class WebPages {
@@ -63,9 +62,9 @@ public class WebPages {
         ServiceResponse response = new ServiceResponse();
         response.bankServer = "localhost";
 
-        String accountPath = "C:/CloudBank/accounts/" + key;
-        int[] bankTotals = Banker.countCoins(accountPath + FileSystem.BankPath);
-        int[] frackedTotals = Banker.countCoins(accountPath + FileSystem.FrackedPath);
+        String accountFolder = FileSystem.AccountFolder + key;
+        int[] bankTotals = Banker.countCoins(accountFolder + FileSystem.BankPath);
+        int[] frackedTotals = Banker.countCoins(accountFolder + FileSystem.FrackedPath);
 
         response.ones = bankTotals[1] + frackedTotals[1];
         response.fives = bankTotals[2] + frackedTotals[2];
@@ -75,6 +74,54 @@ public class WebPages {
         response.status = "coins_shown";
         response.message = "Coin totals returned.";
 
+        return Utils.createGson().toJson(response);
+    }
+
+    @RequestMapping(value = "/deposit_one_stack", method = { RequestMethod.POST, RequestMethod.GET })
+    public String depositStack(@RequestParam(required = false, value = "account") String account,
+                               @RequestParam(required = false, value = "pk") String key,
+                               @RequestParam(required = false, value = "stack") String stack) {
+        String badLogin = isAccountValid(account, key);
+        if (badLogin != null)
+            return badLogin;
+
+        ServiceResponse response = new ServiceResponse();
+        response.bankServer = "localhost";
+
+        if (stack == null || stack.length() == 0) {
+            response.message = "The CloudCoin stack was empty or not included in the post.";
+            response.status = "error";
+            response.receipt = "";
+            return Utils.createGson().toJson(response);
+        }
+
+        ArrayList<CloudCoin> coins = FileUtils.loadCloudCoinsFromStackJson(stack);
+        byte[] stackBytes = stack.getBytes(StandardCharsets.UTF_8);
+        String accountFolder = FileSystem.AccountFolder + key;
+
+        try {
+            if (coins == null || coins.size() == 0)
+                Files.write(Paths.get(accountFolder + FileSystem.TrashPath + new Date().toString()), stackBytes);
+            else
+                FileSystem.writeCoinsToSingleStack(coins, accountFolder + FileSystem.SuspectPath + CoinUtils.generateFilename(coins.get(0)));
+        } catch (IOException e) {
+            e.printStackTrace();
+            coins = null;
+        }
+
+        if (coins == null || coins.size() == 0) {
+            response.status = "error";
+            response.message = "Error: coins were valid.";
+            response.receipt = "";
+            return Utils.createGson().toJson(response);
+        }
+
+        String detectResponse = detect(accountFolder);
+        if (detectResponse != null)
+            return detectResponse;
+
+        response.message = "There was a server error, try again later.";
+        response.status = "error";
         return Utils.createGson().toJson(response);
     }
 
@@ -91,9 +138,8 @@ public class WebPages {
                 return Utils.createGson().toJson(response);
             }
 
-            String PasswordFolder = "Passwords/";
-            String text = null;
-            text = new String(Files.readAllBytes(Paths.get("C:/CloudBank/accounts/" + PasswordFolder + account + ".txt")), StandardCharsets.UTF_8);
+            String text;
+            text = new String(Files.readAllBytes(Paths.get(FileSystem.PasswordFolder + account + ".txt")), StandardCharsets.UTF_8);
 
             if (!text.equals(key)) {
                 response.message = "Private key not correct.";
@@ -122,6 +168,7 @@ public class WebPages {
 
         ServiceResponse response = new ServiceResponse();
         response.bankServer = "localhost";
+        response.time = Utils.getDate();
         response.readyCount = Integer.toString(readyCount);
         response.notReadyCount = Integer.toString(raida.getNotReadyCount());
         if (readyCount > 20) {
@@ -133,5 +180,30 @@ public class WebPages {
         }
 
         return Utils.createGson().toJson(response);
+    }
+
+    private String detect(String accountFolder) {
+        ServiceResponse response = new ServiceResponse();
+        response.bankServer = "localhost";
+
+        response.receipt = multi_detect(accountFolder);
+        Grader.gradeAllInFolder(accountFolder);
+        response.status = "importing";
+        response.message = "The stack file has been imported and detection will begin automatically so long as they are not already in bank. Please check your receipt.";
+
+        response.time = Utils.getDate();
+        return Utils.createGson().toJson(response);
+    }
+
+    public static String multi_detect(String accountPath) {
+        MultiDetect multiDetector = new MultiDetect();
+        String receiptFileName = FileUtils.randomString(16);
+
+        try {
+            multiDetector.detectMulti(20000, receiptFileName, accountPath).get();
+        } catch (InterruptedException | ExecutionException e) {
+            e.printStackTrace();
+        }
+        return receiptFileName;
     }
 }

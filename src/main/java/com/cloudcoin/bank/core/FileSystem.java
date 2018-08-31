@@ -8,8 +8,10 @@ import com.google.gson.Gson;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.CopyOption;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -20,17 +22,29 @@ public class FileSystem {
 
     public String RootPath;
 
+    public static String AccountFolder = "C:\\CloudBank\\accounts\\";
+
+    public static String PasswordFolder = AccountFolder + "Passwords/";
+
+    public static String DetectedPath = File.separator + Config.TAG_SUSPECT + File.separator;
+    public static String SuspectPath = File.separator + Config.TAG_SUSPECT + File.separator;
+
     public static String BankPath = File.separator + Config.TAG_BANK + File.separator;
     public static String FrackedPath = File.separator + Config.TAG_FRACKED + File.separator;
+    public static String CounterfeitPath = File.separator + Config.TAG_COUNTERFEIT + File.separator;
+    public static String LostPath = File.separator + Config.TAG_LOST + File.separator;
 
-    public String DetectedFolder;
-    public String SuspectFolder;
-    public String ExportFolder;
+    public static String ReceiptsPath = File.separator + Config.TAG_RECEIPTS + File.separator;
+    public static String TrashPath = File.separator + Config.TAG_TRASH + File.separator;
 
-    public String CounterfeitFolder;
-    public String BankFolder;
-    public String FrackedFolder;
-    public String LostFolder;
+    public static String DetectedFolder;
+    public static String SuspectFolder;
+    public static String ExportFolder;
+
+    public static String CounterfeitFolder;
+    public static String BankFolder;
+    public static String FrackedFolder;
+    public static String LostFolder;
 
     public String TemplateFolder;
     public String LogsFolder;
@@ -93,7 +107,7 @@ public class FileSystem {
      * @param folder the folder to search for CloudCoin files.
      * @return an ArrayList of all CloudCoins in the specified folder.
      */
-    public ArrayList<CloudCoin> loadFolderCoins(String folder) {
+    public static ArrayList<CloudCoin> loadFolderCoins(String folder) {
         ArrayList<CloudCoin> folderCoins = new ArrayList<>();
 
         String[] filenames = FileUtils.selectFileNamesInFolder(folder);
@@ -156,7 +170,7 @@ public class FileSystem {
      * @param coins    the ArrayList of CloudCoins.
      * @param filePath the absolute filepath of the CloudCoin file, without the extension.
      */
-    public void writeCoinsToSingleStack(ArrayList<CloudCoin> coins, String filePath) {
+    public static void writeCoinsToSingleStack(ArrayList<CloudCoin> coins, String filePath) {
         Gson gson = Utils.createGson();
         try {
             Stack stack = new Stack(coins.toArray(new CloudCoin[0]));
@@ -250,7 +264,7 @@ public class FileSystem {
         });
     }
 
-    public void moveCoin(CloudCoin coin, String sourceFolder, String targetFolder, boolean replaceCoins) {
+    public static void moveCoin(CloudCoin coin, String sourceFolder, String targetFolder, boolean replaceCoins) {
         ArrayList<CloudCoin> folderCoins = loadFolderCoins(targetFolder);
 
         String fileName = (CoinUtils.generateFilename(coin));
@@ -273,6 +287,56 @@ public class FileSystem {
         } catch (Exception e) {
             System.out.println(e.getLocalizedMessage());
             e.printStackTrace();
+        }
+    }
+
+    public static void moveFile(String fileName, String sourceFolder, String targetFolder, boolean replaceCoins) {
+        String newFilename = fileName;
+        if (!replaceCoins) {
+            String[] suspectFileNames = FileUtils.selectFileNamesInFolder(targetFolder);
+            for (String suspect : suspectFileNames)
+                if (suspect.equals(fileName)) {
+                    newFilename = FileUtils.ensureFilenameUnique(targetFolder + fileName, ".stack");
+                    break;
+                }
+        }
+
+        try {
+            Files.move(Paths.get(sourceFolder + fileName), Paths.get(targetFolder + newFilename), StandardCopyOption.REPLACE_EXISTING);
+        } catch (Exception e) {
+            System.out.println(e.getLocalizedMessage());
+            e.printStackTrace();
+        }
+    }
+
+    public static void MoveCoins(ArrayList<CloudCoin> coins, String sourceFolder, String targetFolder) {
+        MoveCoins(coins, sourceFolder, targetFolder, ".stack", false);
+    }
+
+    public static void MoveCoins(ArrayList<CloudCoin> coins, String sourceFolder, String targetFolder, String extension, boolean replaceCoins) {
+        ArrayList<CloudCoin> folderCoins = loadFolderCoins(targetFolder);
+
+        for (CloudCoin coin : coins) {
+            String fileName = CoinUtils.generateFilename(coin);
+            int coinExists = 0;
+            for (CloudCoin folderCoin : folderCoins)
+                if (folderCoin.getSn() == coin.getSn())
+                    coinExists++;
+            //int coinExists = (int) Arrays.stream(folderCoins.toArray(new CloudCoin[0])).filter(x -> x.getSn() == coin.getSn()).count();
+
+            if (coinExists > 0 && !replaceCoins) {
+                String suffix = FileUtils.randomString(16);
+                fileName += suffix.toLowerCase();
+            }
+            try {
+                Gson gson = Utils.createGson();
+                Stack stack = new Stack(coin);
+                Files.write(Paths.get(targetFolder + fileName + extension), gson.toJson(stack).getBytes(StandardCharsets.UTF_8));
+                Files.deleteIfExists(Paths.get(sourceFolder + coin.currentFilename));
+            } catch (Exception e) {
+                System.out.println(e.getLocalizedMessage());
+                e.printStackTrace();
+            }
         }
     }
 

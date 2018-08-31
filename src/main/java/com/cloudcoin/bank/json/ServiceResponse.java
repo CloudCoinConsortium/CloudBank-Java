@@ -24,6 +24,11 @@ public class ServiceResponse {
     public Integer twohundredfifties;
 
 
+    /* Transaction Fields */
+
+    public String receipt;
+
+
     /* Node Fields */
 
     public String readyCount;
