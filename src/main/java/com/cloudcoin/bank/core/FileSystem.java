@@ -26,7 +26,7 @@ public class FileSystem {
 
     public static String PasswordFolder = AccountFolder + "Passwords/";
 
-    public static String DetectedPath = File.separator + Config.TAG_SUSPECT + File.separator;
+    public static String DetectedPath = File.separator + Config.TAG_DETECTED + File.separator;
     public static String SuspectPath = File.separator + Config.TAG_SUSPECT + File.separator;
 
     public static String BankPath = File.separator + Config.TAG_BANK + File.separator;
@@ -282,8 +282,7 @@ public class FileSystem {
             Gson gson = Utils.createGson();
             Stack stack = new Stack(coin);
             Files.write(Paths.get(targetFolder + fileName + ".stack"), gson.toJson(stack).getBytes(StandardCharsets.UTF_8));
-            System.out.println("deleting " + sourceFolder + coin.currentFilename);
-            Files.deleteIfExists(Paths.get(sourceFolder + coin.currentFilename));
+            Files.deleteIfExists(Paths.get(sourceFolder + CoinUtils.generateFilename(coin) + ".stack"));
         } catch (Exception e) {
             System.out.println(e.getLocalizedMessage());
             e.printStackTrace();
@@ -296,7 +295,7 @@ public class FileSystem {
             String[] suspectFileNames = FileUtils.selectFileNamesInFolder(targetFolder);
             for (String suspect : suspectFileNames)
                 if (suspect.equals(fileName)) {
-                    newFilename = FileUtils.ensureFilenameUnique(targetFolder + fileName, ".stack");
+                    newFilename = FileUtils.ensureFilenameUnique(fileName, ".stack", targetFolder);
                     break;
                 }
         }
@@ -332,7 +331,7 @@ public class FileSystem {
                 Gson gson = Utils.createGson();
                 Stack stack = new Stack(coin);
                 Files.write(Paths.get(targetFolder + fileName + extension), gson.toJson(stack).getBytes(StandardCharsets.UTF_8));
-                Files.deleteIfExists(Paths.get(sourceFolder + coin.currentFilename));
+                Files.deleteIfExists(Paths.get(sourceFolder + CoinUtils.generateFilename(coin) + extension));
             } catch (Exception e) {
                 System.out.println(e.getLocalizedMessage());
                 e.printStackTrace();

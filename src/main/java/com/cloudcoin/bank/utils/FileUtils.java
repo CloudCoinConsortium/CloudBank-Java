@@ -44,6 +44,19 @@ public class FileUtils {
         while (Files.exists(Paths.get(newFilename + extension)));
         return newFilename;
     }
+    public static String ensureFilenameUnique(String filename, String extension, String folder) {
+        if (!Files.exists(Paths.get(folder + filename + extension)))
+            return filename;
+
+        filename = filename + '.';
+        String newFilename;
+        int loopCount = 0;
+        do {
+            newFilename = filename + Integer.toString(++loopCount);
+        }
+        while (Files.exists(Paths.get(folder + newFilename + extension)));
+        return newFilename;
+    }
 
     public static String randomString(int length) {
         StringBuilder builder = new StringBuilder();

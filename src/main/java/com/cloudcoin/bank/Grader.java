@@ -11,8 +11,8 @@ public class Grader {
     /**
      * Categorizes coins into folders based on their pown results.
      */
-    public static void gradeAllInFolder(String folderPath) {
-        ArrayList<CloudCoin> detectedCoins = FileSystem.loadFolderCoins(folderPath);
+    public static void gradeSuspectFolder(String folderPath) {
+        ArrayList<CloudCoin> detectedCoins = FileSystem.loadFolderCoins(folderPath + FileSystem.SuspectPath);
 
         // Apply Grading to all detected coins at once.
         detectedCoins.forEach(detectedCoin -> GradeSimple(detectedCoin, folderPath));
@@ -35,10 +35,10 @@ public class Grader {
         updateLog("Total Lost Coins - " + coinsLost.size() + "");
 
         // Move Coins to their respective folders after sort
-        FileSystem.MoveCoins(coinsBank, folderPath + FileSystem.DetectedPath, folderPath + FileSystem.BankPath);
-        FileSystem.MoveCoins(coinsFracked, folderPath + FileSystem.DetectedPath, folderPath + FileSystem.FrackedPath);
-        FileSystem.MoveCoins(coinsCounterfeit, folderPath + FileSystem.DetectedPath, folderPath + FileSystem.CounterfeitFolder);
-        FileSystem.MoveCoins(coinsLost, folderPath + FileSystem.DetectedPath, folderPath + FileSystem.LostPath);
+        FileSystem.MoveCoins(coinsBank, folderPath + FileSystem.SuspectPath, folderPath + FileSystem.BankPath);
+        FileSystem.MoveCoins(coinsFracked, folderPath + FileSystem.SuspectPath, folderPath + FileSystem.FrackedPath);
+        FileSystem.MoveCoins(coinsCounterfeit, folderPath + FileSystem.SuspectPath, folderPath + FileSystem.CounterfeitFolder);
+        FileSystem.MoveCoins(coinsLost, folderPath + FileSystem.SuspectPath, folderPath + FileSystem.LostPath);
     }
 
     /**

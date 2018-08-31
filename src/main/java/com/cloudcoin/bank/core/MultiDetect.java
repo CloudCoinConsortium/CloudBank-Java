@@ -28,7 +28,6 @@ public class MultiDetect {
                 String[] suspectFileNames = FileUtils.selectFileNamesInFolder(folderPath + FileSystem.SuspectPath);
 
                 for (String suspectFileName : suspectFileNames) {
-                    System.out.println("Looking for file " + suspectFileName + " in " + folderPath + FileSystem.SuspectPath);
                     try {
                         if (Files.exists(Paths.get(folderPath + FileSystem.BankPath + suspectFileName)) ||
                                 Files.exists(Paths.get(folderPath + FileSystem.DetectedPath + suspectFileName)))
@@ -73,7 +72,6 @@ public class MultiDetect {
                     nns[i] = coin.getNn();
                     sns[i] = coin.getSn();
                     dens[i] = CoinUtils.getDenomination(coin);
-                    System.out.println(coin.toString());
                 }
                 try {
                     raida.multiRequest = new MultiDetectRequest();
@@ -110,7 +108,7 @@ public class MultiDetect {
                 }
 
                 try {
-                    Files.write(Paths.get(FileSystem.AccountFolder + FileSystem.ReceiptsPath + receiptFile + ".json"), receiptFile.getBytes(StandardCharsets.UTF_8));
+                    Files.write(Paths.get(folderPath + FileSystem.ReceiptsPath + receiptFile + ".json"), receiptFile.getBytes(StandardCharsets.UTF_8));
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -130,7 +128,6 @@ public class MultiDetect {
                         for (int k = 0; k < Config.nodeCount; k++)
                             pownString.append(raida.nodes[k].MultiResponse.responses[j].outcome, 0, 1);
                         coin.setPown(pownString.toString());
-                        FileSystem.moveCoin(coins[j], folderPath + FileSystem.DetectedPath, folderPath + FileSystem.SuspectPath, false);
                     }
                 } catch (Exception e) {
                     System.out.println("RAIDA#PNC: " + e.getLocalizedMessage());

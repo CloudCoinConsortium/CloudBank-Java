@@ -187,7 +187,7 @@ public class WebPages {
         response.bankServer = "localhost";
 
         response.receipt = multi_detect(accountFolder);
-        Grader.gradeAllInFolder(accountFolder);
+        Grader.gradeSuspectFolder(accountFolder);
         response.status = "importing";
         response.message = "The stack file has been imported and detection will begin automatically so long as they are not already in bank. Please check your receipt.";
 

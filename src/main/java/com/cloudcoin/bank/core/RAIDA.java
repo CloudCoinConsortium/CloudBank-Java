@@ -64,6 +64,7 @@ public class RAIDA {
     /* Constructors */
 
     private RAIDA() {
+        nodes = new Node[Config.nodeCount];
         for (int i = 0; i < Config.nodeCount; i++) {
             nodes[i] = new Node(i + 1);
         }
@@ -82,7 +83,8 @@ public class RAIDA {
 
     // Return Main RAIDA Network populated with default Nodes Addresses(Network 1)
     public static RAIDA getInstance() {
-        return (mainNetwork != null) ? mainNetwork : new RAIDA();
+        if (mainNetwork == null) mainNetwork = new RAIDA();
+        return mainNetwork;
     }
 
     public static RAIDA getInstance(Network network) {
