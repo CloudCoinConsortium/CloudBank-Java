@@ -24,6 +24,8 @@ public class FileSystem {
 
     public static String AccountFolder = "C:\\CloudBank\\accounts\\";
 
+    public static String ChecksFolder = "C:\\CloudBank\\checks" + File.separator;
+
     public static String PasswordFolder = AccountFolder + "Passwords/";
 
     public static String DetectedPath = File.separator + Config.TAG_DETECTED + File.separator;

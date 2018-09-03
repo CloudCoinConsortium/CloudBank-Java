@@ -26,6 +26,7 @@ public class Utils {
      */
     public static Gson createGson() {
         return new GsonBuilder()
+                .disableHtmlEscaping()
                 .setPrettyPrinting()
                 .create();
     }
