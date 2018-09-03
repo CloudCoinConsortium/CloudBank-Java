@@ -17,6 +17,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -157,6 +158,13 @@ public class WebPages {
 
         int[] bankTotals = Banker.countCoins(accountFolder + FileSystem.BankPath);
         int[] frackedTotals = Banker.countCoins(accountFolder + FileSystem.FrackedPath);
+        int[] totals = Banker.countCoins(accountFolder);
+        bankTotals[0] += totals[0];
+        bankTotals[1] += totals[1];
+        bankTotals[2] += totals[2];
+        bankTotals[3] += totals[3];
+        bankTotals[4] += totals[4];
+        bankTotals[5] += totals[5];
         int AvailableCoins = ((bankTotals[5] + frackedTotals[5]) * 250) + ((bankTotals[4] + frackedTotals[4]) * 100) + ((bankTotals[3] + frackedTotals[3]) * 25) + ((bankTotals[2] + frackedTotals[2]) * 5) + ((bankTotals[1] + frackedTotals[1]) * 1);
         if (amount > AvailableCoins) {
             response.message = "Request Error: Amount of CloudCoins not available ";
@@ -260,10 +268,10 @@ public class WebPages {
         String CheckHtml = "<html><body><h1>" + getParameter(signBy) + "</h1><email>" + getParameter(emailSender) +
                 "</email><h2>PAYTO THE ORDER OF: " + getParameter(emailTarget) + "</h2><h2>AMOUNT: " + amount +
                 " CloudCoins</h2>" + "<a href='" + /*"https://"*/ "file://" + FileSystem.ChecksFolder + File.separator +
-                checkId + ".html" + "'>Cash Check Now</a></body></html>";
+                checkId + "/index.html" + "'>Cash Check Now</a></body></html>";
 
         try {
-            Files.write(Paths.get(FileSystem.ChecksFolder + checkId + ".html"), CheckHtml.getBytes(StandardCharsets.UTF_8));
+            Files.write(Paths.get(FileSystem.ChecksFolder + checkId + "/index.html"), CheckHtml.getBytes(StandardCharsets.UTF_8));
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -276,7 +284,7 @@ public class WebPages {
             response.message = "Email option is not yet supported.";
             return Utils.createGson().toJson(response);
         } else {
-            response.message = /*"https:/" +*/ "localhost:8080/cash_checks?id=" + checkId + "&receive=download";
+            response.message = /*"https:/" +*/ "localhost:8080/cash_checks?id=" + checkId;
             response.status = "url";
         }
 
@@ -292,7 +300,44 @@ public class WebPages {
         if (stackResponse.contains("Request Error:"))
             return stackResponse;
 
+        response.message = "Request Error: Could not withdraw CloudCoins.";
         return Utils.createGson().toJson(response);
+    }
+
+    @RequestMapping(value = "/cash_check", method = {RequestMethod.POST, RequestMethod.GET})
+    public String cash_check(@RequestParam(required = false, value = "id") String checkId) {
+        ServiceResponse response = new ServiceResponse();
+        response.bankServer = "localhost";
+
+        try {
+            if (getParameter(checkId).length() == 0) {
+                response.message = "Please supply a check ID.";
+                return Utils.createGson().toJson(response);
+            }
+
+            String checkFolder = FileSystem.ChecksFolder + checkId + File.separator;
+            String check = new String(Files.readAllBytes(Paths.get(checkFolder + "/index.html")), StandardCharsets.UTF_8);
+            if (0 == check.length()) {
+                response.message = "The check you requested was not found on the server. It may have been cashed, canceled or you have provided an id that is incorrect.";
+                return Utils.createGson().toJson(response);
+            }
+
+            ArrayList<CloudCoin> coins = FileSystem.loadFolderCoins(checkFolder);
+            int amount = CoinUtils.countCoins(coins);
+
+            String checkResponse = exportStack(amount, checkFolder, null, response);
+            if (!checkResponse.contains("Request Error"))
+                Files.walk(Paths.get(checkFolder))
+                        .sorted(Comparator.reverseOrder())
+                        .map(Path::toFile)
+                        .forEach(File::delete);
+
+            return checkResponse;
+        } catch (IOException e) {
+            e.printStackTrace();
+            response.message = "The check you requested was not found on the server. It may have been cashed, canceled or you have provided an id that is incorrect.";
+            return Utils.createGson().toJson(response);
+        }
     }
 
 
@@ -405,6 +450,13 @@ public class WebPages {
     private String exportStack(int amount, String accountFolder, String targetFolder, ServiceResponse response) {
         int[] bankTotals = Banker.countCoins(accountFolder + FileSystem.BankPath);
         int[] frackedTotals = Banker.countCoins(accountFolder + FileSystem.FrackedPath);
+        int[] totals = Banker.countCoins(accountFolder);
+        bankTotals[0] += totals[0];
+        bankTotals[1] += totals[1];
+        bankTotals[2] += totals[2];
+        bankTotals[3] += totals[3];
+        bankTotals[4] += totals[4];
+        bankTotals[5] += totals[5];
 
         int exp_1 = 0;
         int exp_5 = 0;
@@ -436,6 +488,7 @@ public class WebPages {
         int totalSaved = exp_1 + (exp_5 * 5) + (exp_25 * 25) + (exp_100 * 100) + (exp_250 * 250);
         ArrayList<CloudCoin> totalCoins = FileSystem.loadFolderCoins(accountFolder + FileSystem.BankPath);
         totalCoins.addAll(FileSystem.loadFolderCoins(accountFolder + FileSystem.FrackedPath));
+        totalCoins.addAll(FileSystem.loadFolderCoins(accountFolder));
 
         ArrayList<CloudCoin> onesToExport = new ArrayList<>();
         ArrayList<CloudCoin> fivesToExport = new ArrayList<>();
@@ -477,13 +530,17 @@ public class WebPages {
         exportCoins.addAll(hundredsToExport);
         exportCoins.addAll(twoFiftiesToExport);
 
-        String filename = (totalSaved + ".CloudCoin");
-        filename = FileUtils.ensureFilenameUnique(filename, ".stack", targetFolder);
-        String stack = FileSystem.writeCoinsToSingleStack(exportCoins, filename);
-        if (stack != null) {
-            FileSystem.removeCoins(exportCoins, accountFolder + FileSystem.BankPath);
-            FileSystem.removeCoins(exportCoins, accountFolder + FileSystem.FrackedPath);
-            return stack;
+        if (targetFolder == null) {
+            return FileSystem.writeCoinsToSingleStack(exportCoins, null);
+        } else {
+            String filename = (totalSaved + ".CloudCoin");
+            filename = FileUtils.ensureFilenameUnique(filename, ".stack", targetFolder);
+            String stack = FileSystem.writeCoinsToSingleStack(exportCoins, filename);
+            if (stack != null) {
+                FileSystem.removeCoins(exportCoins, accountFolder + FileSystem.BankPath);
+                FileSystem.removeCoins(exportCoins, accountFolder + FileSystem.FrackedPath);
+                return stack;
+            }
         }
 
         response.message = "Request Error: Could not withdraw CloudCoins.";

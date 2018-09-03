@@ -191,7 +191,8 @@ public class FileSystem {
         try {
             Stack stack = new Stack(coins);
             String json = gson.toJson(stack);
-            Files.write(Paths.get(filePath), json.getBytes());
+            if (filePath != null)
+                Files.write(Paths.get(filePath), json.getBytes());
             return json;
         } catch (IOException e) {
             System.out.println(e.getLocalizedMessage());

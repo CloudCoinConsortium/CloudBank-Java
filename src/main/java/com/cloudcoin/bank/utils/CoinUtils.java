@@ -5,6 +5,7 @@ import com.cloudcoin.bank.core.Config;
 
 import java.security.SecureRandom;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.UUID;
 
 public class CoinUtils {
@@ -18,6 +19,14 @@ public class CoinUtils {
     public static String calcExpirationDate() {
         LocalDate expirationDate = LocalDate.now().plusYears(Config.EXPIRATION_YEARS);
         return (expirationDate.getMonthValue() + "-" + expirationDate.getYear());
+    }
+
+    public static int countCoins(ArrayList<CloudCoin> coins) {
+        int total = 0;
+        for (CloudCoin coin : coins) {
+            total += getDenomination(coin);
+        }
+        return total;
     }
 
     public static int getPassCount(CloudCoin coin) {
