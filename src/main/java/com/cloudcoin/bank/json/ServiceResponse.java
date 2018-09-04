@@ -9,7 +9,7 @@ public class ServiceResponse {
 
     public String bankServer;
     public String status = "fail";
-    public String version = "2.0";
+    public String version = "2.00.1";
     public String time = Utils.getDate();
     public String message = "NO ERROR MESSAGE";
 

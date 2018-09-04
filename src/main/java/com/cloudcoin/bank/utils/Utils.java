@@ -61,4 +61,13 @@ public class Utils {
 
         return data;
     }
+
+    public static int tryParseInt(String s) {
+        try {
+            if (s != null && s.length() != 0) return Integer.parseInt(s);
+        } catch (NumberFormatException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
 }

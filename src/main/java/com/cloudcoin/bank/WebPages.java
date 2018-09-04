@@ -16,6 +16,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
@@ -340,6 +341,87 @@ public class WebPages {
         }
     }
 
+    @RequestMapping(value = "/mark_coins_forsale", method = {RequestMethod.POST, RequestMethod.GET})
+    public String mark_for_sale(@RequestParam(required = false, value = "account") String account,
+                                @RequestParam(required = false, value = "pk") String key,
+                                @RequestParam(required = false, value = "ones") String onesInput,
+                                @RequestParam(required = false, value = "fives") String fivesInput,
+                                @RequestParam(required = false, value = "twentyfives") String twentyFivesInput,
+                                @RequestParam(required = false, value = "hundreds") String hundredsInput,
+                                @RequestParam(required = false, value = "twohundredfifties") String twoHundredFiftiesInput) {
+        String badLogin = isAccountAndPasswordValid(account, key);
+        if (badLogin != null)
+            return badLogin;
+
+        ServiceResponse response = new ServiceResponse();
+        response.bankServer = "localhost";
+
+        String Ones = getParameter(onesInput);
+        String Fives = getParameter(fivesInput);
+        String TwentyFives = getParameter(twentyFivesInput);
+        String Hundreds = getParameter(hundredsInput);
+        String TwoHundredFifties = getParameter(twoHundredFiftiesInput);
+        if (Ones.equals("") && Fives.equals("") && TwentyFives.equals("") && Hundreds.equals("") && TwoHundredFifties.equals("")) {
+            response.status = "fail";
+            response.message = "No coins to mark provided";
+            return Utils.createGson().toJson(response);
+        }
+        int ones, fives, twentyFives, hundreds, twoHundredFifties;
+        ones = Utils.tryParseInt(Ones);
+        fives = Utils.tryParseInt(Fives);
+        twentyFives = Utils.tryParseInt(TwentyFives);
+        hundreds = Utils.tryParseInt(Hundreds);
+        twoHundredFifties = Utils.tryParseInt(TwoHundredFifties);
+
+        String accountFolder = FileSystem.AccountFolder + key;
+
+        int[] saleCoins = GetCoinsCurrentlyMarkedForSale(accountFolder);
+        if (Ones.length() != 0) {
+            if (ones != saleCoins[0]) {
+                if (ones < saleCoins[0])
+                    UnMarkCoins("1", saleCoins[0] - ones, accountFolder);
+                else
+                    MarkCoins("1", ones - saleCoins[0], accountFolder);
+            }
+        }
+        if (Fives.length() != 0) {
+            if (fives != saleCoins[1]) {
+                if (fives < saleCoins[1])
+                    UnMarkCoins("5", saleCoins[1] - fives, accountFolder);
+                else
+                    MarkCoins("5", fives - saleCoins[1], accountFolder);
+            }
+        }
+        if (TwentyFives.length() != 0) {
+            if (twentyFives != saleCoins[2]) {
+                if (twentyFives < saleCoins[2])
+                    UnMarkCoins("25", saleCoins[2] - twentyFives, accountFolder);
+                else
+                    MarkCoins("25", twentyFives - saleCoins[2], accountFolder);
+            }
+        }
+        if (Hundreds.length() != 0) {
+            if (hundreds != saleCoins[3]) {
+                if (hundreds < saleCoins[3])
+                    UnMarkCoins("100", saleCoins[3] - hundreds, accountFolder);
+                else
+                    MarkCoins("100", hundreds - saleCoins[3], accountFolder);
+            }
+        }
+        if (TwoHundredFifties.length() != 0) {
+            if (twoHundredFifties != saleCoins[4]) {
+                if (twoHundredFifties < saleCoins[4])
+                    UnMarkCoins("250", saleCoins[4] - twoHundredFifties, accountFolder);
+                else
+                    MarkCoins("250", twoHundredFifties - saleCoins[4], accountFolder);
+            }
+        }
+
+        response.status = "success";
+        response.message = "Coins Marked for Sale";
+        return Utils.createGson().toJson(response);
+    }
+
 
     /* Methods */
 
@@ -545,5 +627,68 @@ public class WebPages {
 
         response.message = "Request Error: Could not withdraw CloudCoins.";
         return Utils.createGson().toJson(response);
+    }
+
+    private int[] GetCoinsCurrentlyMarkedForSale(String accountFolder) {
+        int[] markedCoins = new int[5];
+        String[] files = FileUtils.selectFileNamesInFolder(accountFolder + FileSystem.BankPath);
+
+        for (String file : files) {
+            if (file.contains("forsale")) {
+                String denomination = file.substring(0, file.indexOf('.'));
+                if ("1".equals(denomination))
+                    markedCoins[0]++;
+                else if ("5".equals(denomination))
+                    markedCoins[1]++;
+                else if ("25".equals(denomination))
+                    markedCoins[2]++;
+                else if ("100".equals(denomination))
+                    markedCoins[3]++;
+                else if ("250".equals(denomination))
+                    markedCoins[4]++;
+            }
+        }
+        return markedCoins;
+    }
+
+    private void MarkCoins(String denomination, int number, String accountFolder) {
+        String bankFolder = accountFolder + FileSystem.BankPath;
+        String[] files = FileUtils.selectFileNamesInFolder(bankFolder);
+        for (String file : files) {
+            if (number <= 0) break;
+            if (!file.contains("forsale")) {
+                String noteAmount = file.substring(0, file.indexOf('.'));
+                if (noteAmount.equals(denomination)) {
+                    int end = file.lastIndexOf('.');
+                    String newFilename = file.substring(0, end) + ".forsale" + file.substring(end);
+                    try {
+                        Files.move(Paths.get(bankFolder + file), Paths.get(bankFolder + newFilename), StandardCopyOption.REPLACE_EXISTING);
+                        number--;
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }
+    }
+
+    private void UnMarkCoins(String denomination, int number, String accountFolder) {
+        String bankFolder = accountFolder + FileSystem.BankPath;
+        String[] files = FileUtils.selectFileNamesInFolder(bankFolder);
+        for (String file : files) {
+            if (number <= 0) break;
+            if (file.contains("forsale")) {
+                String noteAmount = file.substring(0, file.indexOf('.'));
+                if (noteAmount.equals(denomination)) {
+                    String newFilename = file.replace("forsale", "").replace("..", ".");
+                    try {
+                        Files.move(Paths.get(bankFolder + file), Paths.get(bankFolder + newFilename), StandardCopyOption.REPLACE_EXISTING);
+                        number--;
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }
     }
 }
