@@ -20,7 +20,7 @@ public class Config {
     public static final String TAG_COUNTERFEIT = "Counterfeit";
     public static final String TAG_LOST = "Lost";
 
-    public static final String TAG_LOGS = "Logs";
+    public static final String TAG_LOGS = "logs";
     public static final String TAG_RECEIPTS = "Receipts";
     public static final String TAG_TRASH = "Trash";
 

@@ -1,9 +1,11 @@
 package com.cloudcoin.bank;
 
 import com.cloudcoin.bank.core.*;
+import com.cloudcoin.bank.core.FileSystem;
 import com.cloudcoin.bank.json.ServiceResponse;
 import com.cloudcoin.bank.utils.CoinUtils;
 import com.cloudcoin.bank.utils.FileUtils;
+import com.cloudcoin.bank.utils.SimpleLogger;
 import com.cloudcoin.bank.utils.Utils;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -13,10 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
+import java.nio.file.*;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
@@ -43,6 +42,7 @@ public class WebPages {
         response.message = "CloudCoin Bank. Used to Authenticate, Store and Payout CloudCoins." +
                 "This Software is provided as is with all faults, defects and errors, and without warranty of any kind." +
                 "Free from the CloudCoin Consortium.";
+        new SimpleLogger().LogGoodCall(Utils.createGson().toJson(response));
         return Utils.createGson().toJson(response);
     }
 
@@ -50,8 +50,10 @@ public class WebPages {
     public String echo(@RequestParam(required = false, value = "account") String account,
                        @RequestParam(required = false, value = "pk") String key) {
         String badLogin = isAccountAndPasswordValid(account, key);
-        if (badLogin != null)
+        if (badLogin != null) {
+            new SimpleLogger().LogBadLogin(badLogin);
             return badLogin;
+        }
 
         return EchoRaida();
     }
@@ -60,8 +62,10 @@ public class WebPages {
     public String show_coins(@RequestParam(required = false, value = "account") String account,
                              @RequestParam(required = false, value = "pk") String key) {
         String badLogin = isAccountAndPasswordValid(account, key);
-        if (badLogin != null)
+        if (badLogin != null) {
+            new SimpleLogger().LogBadLogin(badLogin);
             return badLogin;
+        }
 
         ServiceResponse response = new ServiceResponse();
         response.bankServer = "localhost";
@@ -78,6 +82,7 @@ public class WebPages {
         response.status = "coins_shown";
         response.message = "Coin totals returned.";
 
+        new SimpleLogger().LogGoodCall(Utils.createGson().toJson(response));
         return Utils.createGson().toJson(response);
     }
 
@@ -86,8 +91,10 @@ public class WebPages {
                                @RequestParam(required = false, value = "pk") String key,
                                @RequestParam(required = false, value = "stack") String stack) {
         String badLogin = isAccountAndPasswordValid(account, key);
-        if (badLogin != null)
+        if (badLogin != null) {
+            new SimpleLogger().LogBadLogin(badLogin);
             return badLogin;
+        }
 
         ServiceResponse response = new ServiceResponse();
         response.bankServer = "localhost";
@@ -96,6 +103,10 @@ public class WebPages {
             response.message = "The CloudCoin stack was empty or not included in the post.";
             response.status = "error";
             response.receipt = "";
+            response.account = getParameterForLogging(account);
+            response.pk = getParameterForLogging(key);
+            response.stack = getParameterForLogging(stack);
+            new SimpleLogger().LogBadCall(Utils.createGson().toJson(response));
             return Utils.createGson().toJson(response);
         }
 
@@ -104,8 +115,11 @@ public class WebPages {
         String accountFolder = FileSystem.AccountFolder + key;
 
         try {
-            if (coins == null || coins.size() == 0)
-                Files.write(Paths.get(accountFolder + FileSystem.TrashPath + new Date().toString()), stackBytes);
+            if (coins == null || coins.size() == 0) {
+                Path path = Paths.get(accountFolder + FileSystem.TrashPath + new Date().toString());
+                Files.createDirectories(path.getParent());
+                Files.write(path, stackBytes, StandardOpenOption.CREATE_NEW);
+            }
             else {
                 String filename = CoinUtils.generateFilename(coins.get(0));
                 filename = FileUtils.ensureFilenameUnique(filename, ".stack", accountFolder + FileSystem.SuspectPath);
@@ -120,15 +134,25 @@ public class WebPages {
             response.status = "error";
             response.message = "Error: coins were valid.";
             response.receipt = "";
+            response.account = getParameterForLogging(account);
+            response.pk = getParameterForLogging(key);
+            response.stack = getParameterForLogging(stack);
+            new SimpleLogger().LogBadCall(Utils.createGson().toJson(response));
             return Utils.createGson().toJson(response);
         }
 
         String detectResponse = detect(accountFolder);
-        if (detectResponse != null)
+        if (detectResponse != null) {
+            new SimpleLogger().LogGoodCall(detectResponse);
             return detectResponse;
+        }
 
         response.message = "There was a server error, try again later.";
         response.status = "error";
+        response.account = getParameterForLogging(account);
+        response.pk = getParameterForLogging(key);
+        response.stack = getParameterForLogging(stack);
+        new SimpleLogger().LogBadCall(Utils.createGson().toJson(response));
         return Utils.createGson().toJson(response);
     }
 
@@ -137,22 +161,28 @@ public class WebPages {
                                 @RequestParam(required = false, value = "pk") String key,
                                 @RequestParam(required = false, value = "amount") String amountInput) {
         String badLogin = isAccountAndPasswordValid(account, key);
-        if (badLogin != null)
+        if (badLogin != null) {
+            new SimpleLogger().LogBadLogin(badLogin);
             return badLogin;
+        }
 
         ServiceResponse response = new ServiceResponse();
         response.bankServer = "localhost";
 
-        int amount;
+        int amount = 0;
         try {
             amount = Integer.parseInt(amountInput);
         } catch (NumberFormatException ex) {
-            response.message = "Request Error: Amount of CloudCoins is invalid.";
-            return Utils.createGson().toJson(response);
-        }
-        if (amount == 0) {
-            response.message = "Request Error: Amount of CloudCoins is invalid.";
-            return Utils.createGson().toJson(response);
+            ex.printStackTrace();
+        } finally {
+            if (amount == 0) {
+                response.message = "Request Error: Amount of CloudCoins is invalid.";
+                response.account = getParameterForLogging(account);
+                response.pk = getParameterForLogging(key);
+                response.amount = getParameterForLogging(amountInput);
+                new SimpleLogger().LogBadCall(Utils.createGson().toJson(response));
+                return Utils.createGson().toJson(response);
+            }
         }
 
         String accountFolder = FileSystem.AccountFolder + key;
@@ -168,25 +198,38 @@ public class WebPages {
         bankTotals[5] += totals[5];
         int AvailableCoins = ((bankTotals[5] + frackedTotals[5]) * 250) + ((bankTotals[4] + frackedTotals[4]) * 100) + ((bankTotals[3] + frackedTotals[3]) * 25) + ((bankTotals[2] + frackedTotals[2]) * 5) + ((bankTotals[1] + frackedTotals[1]) * 1);
         if (amount > AvailableCoins) {
-            response.message = "Request Error: Amount of CloudCoins not available ";
+            response.message = "Request Error: Amount of CloudCoins not available.";
+            response.account = getParameterForLogging(account);
+            response.pk = getParameterForLogging(key);
+            response.amount = getParameterForLogging(amountInput);
+            new SimpleLogger().LogBadCall(Utils.createGson().toJson(response));
             return Utils.createGson().toJson(response);
         }
 
-        return exportStack(amount, accountFolder, accountFolder + FileSystem.ExportPath, response);
+        String stack = exportStack(amount, accountFolder, accountFolder + FileSystem.ExportPath, response);
+        if ('{' == stack.charAt(0))
+            new SimpleLogger().LogGoodCall(stack);
+
+        return stack;
     }
 
     @RequestMapping(value = "/get_receipt", method = {RequestMethod.POST, RequestMethod.GET})
     public String getReceipt(@RequestParam(required = false, value = "account") String account,
                              @RequestParam(required = false, value = "rn") String receiptId) {
         String accountResponse = isAccountValid(account);
-        if ('{' == accountResponse.charAt(0))
+        if ('{' == accountResponse.charAt(0)) {
+            new SimpleLogger().LogBadLogin(accountResponse);
             return accountResponse;
+        }
 
         ServiceResponse response = new ServiceResponse();
         response.bankServer = "localhost";
 
         if (receiptId == null) {
             response.message = "Request Error: Receipt Number or Account ID not specified";
+            response.account = getParameterForLogging(account);
+            response.id = getParameterForLogging(receiptId);
+            new SimpleLogger().LogBadCall(Utils.createGson().toJson(response));
             return Utils.createGson().toJson(response);
         }
 
@@ -194,14 +237,21 @@ public class WebPages {
             Path receiptPath = Paths.get(FileSystem.AccountFolder + accountResponse + FileSystem.ReceiptsPath + receiptId + ".json");
             if (!Files.exists(receiptPath)) {
                 response.message = "Receipt not correct.";
-                response.account = account;
+                response.account = getParameterForLogging(account);
+                response.id = getParameterForLogging(receiptId);
+                new SimpleLogger().LogBadCall(Utils.createGson().toJson(response));
                 return Utils.createGson().toJson(response);
             }
 
-            return new String(Files.readAllBytes(receiptPath), StandardCharsets.UTF_8);
+            String receipt = new String(Files.readAllBytes(receiptPath), StandardCharsets.UTF_8);
+            new SimpleLogger().LogGoodCall(receipt);
+            return receipt;
         } catch (IOException e) {
-            response.message = "Request Error: Private key or Account not found.";
             e.printStackTrace();
+            response.message = "Request Error: Private key or Account not found.";
+            response.account = getParameterForLogging(account);
+            response.id = getParameterForLogging(receiptId);
+            new SimpleLogger().LogBadCall(Utils.createGson().toJson(response));
             return Utils.createGson().toJson(response);
         }
     }
@@ -218,8 +268,10 @@ public class WebPages {
                              @RequestParam(required = false, value = "memo") String memo,
                              @RequestParam(required = false, value = "othercontactinfo") String otherContactInfo) {
         String badLogin = isAccountAndPasswordValid(account, key);
-        if (badLogin != null)
+        if (badLogin != null) {
+            new SimpleLogger().LogBadLogin(badLogin);
             return badLogin;
+        }
 
         ServiceResponse response = new ServiceResponse();
         response.bankServer = "localhost";
@@ -232,12 +284,19 @@ public class WebPages {
         } finally {
             if (amount == 0) {
                 response.message = "Request Error: Amount of CloudCoins is invalid.";
+                response.account = getParameterForLogging(account);
+                response.amount = getParameterForLogging(amountInput);
+                new SimpleLogger().LogBadCall(Utils.createGson().toJson(response));
                 return Utils.createGson().toJson(response);
             }
         }
 
         if (!("url".equals(action) || "email".equals(action))) {
             response.message = "Request Error: No action specified";
+            response.account = getParameterForLogging(account);
+            response.amount = getParameterForLogging(amountInput);
+            response.action = getParameterForLogging(action);
+            new SimpleLogger().LogBadCall(Utils.createGson().toJson(response));
             return Utils.createGson().toJson(response);
         }
 
@@ -249,6 +308,10 @@ public class WebPages {
         if (bankTotals[0] + frackedTotals[0] < amount) {
             response.status = "error";
             response.message = "Not enough funds to write Check for " + amount + " CloudCoins";
+            response.account = getParameterForLogging(account);
+            response.amount = getParameterForLogging(amountInput);
+            response.action = getParameterForLogging(action);
+            new SimpleLogger().LogBadCall(Utils.createGson().toJson(response));
             return Utils.createGson().toJson(response);
         }
 
@@ -256,11 +319,22 @@ public class WebPages {
             if (!isParameterValid(emailTarget)) {
                 response.status = "error";
                 response.message = "Email to send check to not specified";
+                response.account = getParameterForLogging(account);
+                response.amount = getParameterForLogging(amountInput);
+                response.action = getParameterForLogging(action);
+                response.emailTarget = getParameterForLogging(emailTarget);
+                new SimpleLogger().LogBadCall(Utils.createGson().toJson(response));
                 return Utils.createGson().toJson(response);
             }
             if (!isParameterValid(emailSender)) {
                 response.status = "error";
                 response.message = "Your email address not specified";
+                response.account = getParameterForLogging(account);
+                response.amount = getParameterForLogging(amountInput);
+                response.action = getParameterForLogging(action);
+                response.emailTarget = getParameterForLogging(emailTarget);
+                response.emailSender = getParameterForLogging(emailSender);
+                new SimpleLogger().LogBadCall(Utils.createGson().toJson(response));
                 return Utils.createGson().toJson(response);
             }
         }
@@ -272,9 +346,21 @@ public class WebPages {
                 checkId + "/index.html" + "'>Cash Check Now</a></body></html>";
 
         try {
-            Files.write(Paths.get(FileSystem.ChecksFolder + checkId + "/index.html"), CheckHtml.getBytes(StandardCharsets.UTF_8));
+            Path path = Paths.get(FileSystem.ChecksFolder + checkId + "\\index.html");
+            Files.createDirectories(path.getParent());
+            Files.write(path, CheckHtml.getBytes(StandardCharsets.UTF_8), StandardOpenOption.CREATE_NEW);
         } catch (IOException e) {
             e.printStackTrace();
+            response.status = "error";
+            response.message = "Check could not be created.";
+            response.account = getParameterForLogging(account);
+            response.amount = getParameterForLogging(amountInput);
+            response.action = getParameterForLogging(action);
+            response.emailTarget = getParameterForLogging(emailTarget);
+            response.emailSender = getParameterForLogging(emailSender);
+            response.signBy = getParameterForLogging(signBy);
+            new SimpleLogger().LogBadCall(Utils.createGson().toJson(response));
+            return Utils.createGson().toJson(response);
         }
 
         if ("email".equals(action)) {
@@ -294,15 +380,22 @@ public class WebPages {
         if (amount > AvailableCoins) {
             response.message = "Request Error: Amount of CloudCoins not available ";
             response.status = "error";
+            response.account = getParameterForLogging(account);
+            response.amount = getParameterForLogging(amountInput);
+            response.action = getParameterForLogging(action);
+            response.emailTarget = getParameterForLogging(emailTarget);
+            response.emailSender = getParameterForLogging(emailSender);
+            response.signBy = getParameterForLogging(signBy);
+            new SimpleLogger().LogBadCall(Utils.createGson().toJson(response));
             return Utils.createGson().toJson(response);
         }
 
-        String stackResponse = exportStack(amount, accountFolder, FileSystem.ChecksFolder, response);
+        String stackResponse = exportStack(amount, accountFolder, FileSystem.ChecksFolder + checkId + File.separator, response);
         if (stackResponse.contains("Request Error:"))
             return stackResponse;
 
-        response.message = "Request Error: Could not withdraw CloudCoins.";
-        return Utils.createGson().toJson(response);
+        new SimpleLogger().LogGoodCall(CheckHtml);
+        return CheckHtml;
     }
 
     @RequestMapping(value = "/cash_check", method = {RequestMethod.POST, RequestMethod.GET})
@@ -313,6 +406,9 @@ public class WebPages {
         try {
             if (getParameter(checkId).length() == 0) {
                 response.message = "Please supply a check ID.";
+                response.status = "error";
+                response.id = getParameterForLogging(checkId);
+                new SimpleLogger().LogBadCall(Utils.createGson().toJson(response));
                 return Utils.createGson().toJson(response);
             }
 
@@ -320,6 +416,9 @@ public class WebPages {
             String check = new String(Files.readAllBytes(Paths.get(checkFolder + "/index.html")), StandardCharsets.UTF_8);
             if (0 == check.length()) {
                 response.message = "The check you requested was not found on the server. It may have been cashed, canceled or you have provided an id that is incorrect.";
+                response.status = "error";
+                response.id = getParameterForLogging(checkId);
+                new SimpleLogger().LogBadCall(Utils.createGson().toJson(response));
                 return Utils.createGson().toJson(response);
             }
 
@@ -333,10 +432,14 @@ public class WebPages {
                         .map(Path::toFile)
                         .forEach(File::delete);
 
+            new SimpleLogger().LogGoodCall(checkResponse);
             return checkResponse;
         } catch (IOException e) {
             e.printStackTrace();
             response.message = "The check you requested was not found on the server. It may have been cashed, canceled or you have provided an id that is incorrect.";
+            response.status = "error";
+            response.id = getParameterForLogging(checkId);
+            new SimpleLogger().LogBadCall(Utils.createGson().toJson(response));
             return Utils.createGson().toJson(response);
         }
     }
@@ -350,8 +453,10 @@ public class WebPages {
                                 @RequestParam(required = false, value = "hundreds") String hundredsInput,
                                 @RequestParam(required = false, value = "twohundredfifties") String twoHundredFiftiesInput) {
         String badLogin = isAccountAndPasswordValid(account, key);
-        if (badLogin != null)
+        if (badLogin != null) {
+            new SimpleLogger().LogBadLogin(badLogin);
             return badLogin;
+        }
 
         ServiceResponse response = new ServiceResponse();
         response.bankServer = "localhost";
@@ -364,6 +469,7 @@ public class WebPages {
         if (Ones.equals("") && Fives.equals("") && TwentyFives.equals("") && Hundreds.equals("") && TwoHundredFifties.equals("")) {
             response.status = "fail";
             response.message = "No coins to mark provided";
+            new SimpleLogger().LogBadCall(Utils.createGson().toJson(response));
             return Utils.createGson().toJson(response);
         }
         int ones, fives, twentyFives, hundreds, twoHundredFifties;
@@ -419,6 +525,7 @@ public class WebPages {
 
         response.status = "success";
         response.message = "Coins Marked for Sale";
+        new SimpleLogger().LogGoodCall(Utils.createGson().toJson(response));
         return Utils.createGson().toJson(response);
     }
 
@@ -431,19 +538,21 @@ public class WebPages {
         try {
             if (account == null) {
                 response.message = "Request Error: Private key or Account not specified.";
+                response.account = getParameterForLogging(account);
                 return Utils.createGson().toJson(response);
             }
 
             String key = new String(Files.readAllBytes(Paths.get(FileSystem.PasswordFolder + account + ".txt")), StandardCharsets.UTF_8);
             if (0 == key.length()) {
                 response.message = "Private key not correct.";
-                response.account = account;
+                response.account = getParameterForLogging(account);
                 return Utils.createGson().toJson(response);
             }
             return key;
         } catch (IOException e) {
-            response.message = "Request Error: Private key or Account not found.";
             e.printStackTrace();
+            response.message = "Request Error: Private key or Account not found.";
+            response.account = getParameterForLogging(account);
             return Utils.createGson().toJson(response);
         }
     }
@@ -458,11 +567,14 @@ public class WebPages {
 
         if (key == null) {
             response.message = "Request Error: Private key or Account not specified.";
+            response.account = getParameterForLogging(account);
+            response.pk = getParameterForLogging(key);
             return Utils.createGson().toJson(response);
         }
         if (!key.equals(accountResponse)) {
             response.message = "Private key not correct.";
-            response.account = account;
+            response.account = getParameterForLogging(account);
+            response.pk = getParameterForLogging(key);
             return Utils.createGson().toJson(response);
         }
 
@@ -473,8 +585,12 @@ public class WebPages {
         return (param != null && param.length() != 0);
     }
 
-    String getParameter(String param) {
+    private String getParameter(String param) {
         return (null == param) ? "" : param;
+    }
+
+    private String getParameterForLogging(String param) {
+        return (null == param) ? ":NULL:" : param;
     }
 
     private String EchoRaida() {
@@ -501,6 +617,7 @@ public class WebPages {
             response.message = "Not enough RAIDA servers can be contacted to import new coins.";
         }
 
+        new SimpleLogger().LogGoodCall(Utils.createGson().toJson(response));
         return Utils.createGson().toJson(response);
     }
 
@@ -626,6 +743,7 @@ public class WebPages {
         }
 
         response.message = "Request Error: Could not withdraw CloudCoins.";
+        new SimpleLogger().LogBadCall(Utils.createGson().toJson(response));
         return Utils.createGson().toJson(response);
     }
 

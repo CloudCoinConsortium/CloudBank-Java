@@ -1,11 +1,11 @@
 package com.cloudcoin.bank.utils;
 
+import com.cloudcoin.bank.core.FileSystem;
+
+import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
+import java.nio.file.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
@@ -29,6 +29,9 @@ public class SimpleLogger {
      */
     public SimpleLogger(String fullFilePath) {
         initialize(fullFilePath);
+    }
+    public SimpleLogger() {
+        initialize("C:\\CloudBank" + FileSystem.LogsPath + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmssSSS")).toLowerCase() + ".log");
     }
 
 
@@ -74,6 +77,18 @@ public class SimpleLogger {
         writeFormattedLog(LogLevel.INFO, text);
     }
 
+    public void LogBadLogin(String text) {
+        writeFormattedLog(LogLevel.BADLOGIN, text);
+    }
+
+    public void LogBadCall(String text) {
+        writeFormattedLog(LogLevel.BADCALL, text);
+    }
+
+    public void LogGoodCall(String text) {
+        writeFormattedLog(LogLevel.BADCALL, text);
+    }
+
     /**
      * Writes all log messages to a file.
      */
@@ -89,6 +104,9 @@ public class SimpleLogger {
     private void writeFormattedLog(LogLevel level, String text) {
         String pretext;
         switch (level) {
+            case BADLOGIN:
+                pretext = LocalDateTime.now().format(logTimestampFormat) + " [BADLOGIN]   ";
+                break;
             case TRACE:
                 pretext = LocalDateTime.now().format(logTimestampFormat) + " [TRACE]   ";
                 break;
@@ -150,6 +168,9 @@ public class SimpleLogger {
      * Supported log levels.
      */
     enum LogLevel {
+        BADLOGIN,
+        BADCALL,
+        GOODCALL,
         TRACE,
         INFO,
         DEBUG,

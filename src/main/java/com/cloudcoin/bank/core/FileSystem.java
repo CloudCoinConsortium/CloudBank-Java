@@ -8,10 +8,7 @@ import com.google.gson.Gson;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.CopyOption;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
+import java.nio.file.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -20,13 +17,8 @@ public class FileSystem {
 
     /* Fields */
 
-    public String RootPath;
+    public static String RootPath = "C:\\CloudBank\\";
 
-    public static String AccountFolder = "C:\\CloudBank\\accounts\\";
-
-    public static String ChecksFolder = "C:\\CloudBank\\checks" + File.separator;
-
-    public static String PasswordFolder = AccountFolder + "Passwords/";
 
     public static String DetectedPath = File.separator + Config.TAG_DETECTED + File.separator;
     public static String SuspectPath = File.separator + Config.TAG_SUSPECT + File.separator;
@@ -40,6 +32,15 @@ public class FileSystem {
     public static String ReceiptsPath = File.separator + Config.TAG_RECEIPTS + File.separator;
     public static String TrashPath = File.separator + Config.TAG_TRASH + File.separator;
 
+    public static String LogsPath = File.separator + Config.TAG_LOGS + File.separator;
+
+
+    public static String AccountFolder = RootPath + "accounts" + File.separator;
+    public static String PasswordFolder = AccountFolder + "Passwords" + File.separator;
+    public static String ChecksFolder = RootPath + "checks" + File.separator;
+    public static String LogsFolder = RootPath + LogsPath;
+
+
     public static String DetectedFolder;
     public static String SuspectFolder;
     public static String ExportFolder;
@@ -50,7 +51,6 @@ public class FileSystem {
     public static String LostFolder;
 
     public String TemplateFolder;
-    public String LogsFolder;
 
     public static ArrayList<CloudCoin> importCoins;
     public static ArrayList<CloudCoin> predetectCoins;
@@ -85,13 +85,13 @@ public class FileSystem {
      *
      * @return true if all folders were created or already exist, otherwise false.
      */
-    public boolean createDirectories() {
+    public static boolean createDirectories() {
         try {
             Files.createDirectories(Paths.get(RootPath));
 
-            Files.createDirectories(Paths.get(ExportFolder));
-            Files.createDirectories(Paths.get(BankFolder));
-            Files.createDirectories(Paths.get(FrackedFolder));
+            Files.createDirectories(Paths.get(AccountFolder));
+            Files.createDirectories(Paths.get(PasswordFolder));
+            Files.createDirectories(Paths.get(ChecksFolder));
             Files.createDirectories(Paths.get(LogsFolder));
         } catch (Exception e) {
             System.out.println("FS#CD: " + e.getLocalizedMessage());
@@ -191,8 +191,11 @@ public class FileSystem {
         try {
             Stack stack = new Stack(coins);
             String json = gson.toJson(stack);
-            if (filePath != null)
-                Files.write(Paths.get(filePath), json.getBytes());
+            if (filePath != null) {
+                Path path = Paths.get(filePath);
+                Files.createDirectories(path.getParent());
+                Files.write(path, json.getBytes(), StandardOpenOption.CREATE_NEW);
+            }
             return json;
         } catch (IOException e) {
             System.out.println(e.getLocalizedMessage());

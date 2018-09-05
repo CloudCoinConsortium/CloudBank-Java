@@ -14,9 +14,18 @@ public class ServiceResponse {
     public String message = "NO ERROR MESSAGE";
 
 
-    /* Account Fields */
+    /* Input Fields */
 
     public String account;
+    public String pk;
+    public String stack;
+    public String amount;
+    public String id;
+    public String action;
+    public String emailTarget;
+    public String emailSender;
+    public String signBy;
+
     public Integer ones;
     public Integer fives;
     public Integer twentyfives;
