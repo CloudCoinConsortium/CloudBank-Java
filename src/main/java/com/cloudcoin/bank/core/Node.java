@@ -3,8 +3,8 @@ package com.cloudcoin.bank.core;
 import com.cloudcoin.bank.json.ServiceResponse;
 import com.cloudcoin.bank.utils.Utils;
 import com.google.gson.Gson;
+import io.netty.handler.codec.http.HttpHeaders;
 import org.asynchttpclient.*;
-//import org.asynchttpclient.*;
 
 import java.util.ArrayList;
 import java.util.concurrent.CompletableFuture;
@@ -164,7 +164,7 @@ public class Node {
                     }
 
                     @Override
-                    public State onHeadersReceived(HttpResponseHeaders headers) {
+                    public State onHeadersReceived(HttpHeaders headers) {
                         builder.accumulate(headers);
                         return State.CONTINUE;
                     }
