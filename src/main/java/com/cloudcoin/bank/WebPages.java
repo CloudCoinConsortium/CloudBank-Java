@@ -7,11 +7,13 @@ import com.cloudcoin.bank.utils.CoinUtils;
 import com.cloudcoin.bank.utils.FileUtils;
 import com.cloudcoin.bank.utils.SimpleLogger;
 import com.cloudcoin.bank.utils.Utils;
+import org.springframework.boot.web.servlet.error.ErrorController;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -23,7 +25,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 @RestController
-public class WebPages {
+public class WebPages implements ErrorController {
 
 
     /* Web Pages */
@@ -33,6 +35,21 @@ public class WebPages {
         return "Greetings from Spring Boot!";
     }
 
+    @RequestMapping("/error")
+    public String error(HttpServletRequest request) {
+        ServiceResponse response = new ServiceResponse();
+        response.bankServer = "localhost";
+        response.status = "error";
+        response.message = "There was an error with your request.";
+        new SimpleLogger().LogBadCall(Utils.createGson().toJson(response));
+        return Utils.createGson().toJson(response);
+    }
+
+    @Override
+    public String getErrorPath() {
+        return "/error";
+    }
+
     @RequestMapping("/print_welcome")
     public String print_welcome() {
         ServiceResponse response = new ServiceResponse();
@@ -40,7 +57,7 @@ public class WebPages {
         response.bankServer = "localhost";
         response.status = "welcome";
         response.message = "CloudCoin Bank. Used to Authenticate, Store and Payout CloudCoins." +
-                "This Software is provided as is with all faults, defects and errors, and without warranty of any kind." +
+                "This Software is provided as is, with all faults, defects, errors, and without warranty of any kind." +
                 "Free from the CloudCoin Consortium.";
         new SimpleLogger().LogGoodCall(Utils.createGson().toJson(response));
         return Utils.createGson().toJson(response);
@@ -477,7 +494,7 @@ public class WebPages {
         return CheckHtml;
     }
 
-    @RequestMapping(value = "/cash_check", method = {RequestMethod.POST, RequestMethod.GET})
+    @RequestMapping(value={"/cash_check", "/cash_checks"}, method = {RequestMethod.POST, RequestMethod.GET})
     public String cash_check(@RequestParam(required = false, value = "id") String checkId) {
         ServiceResponse response = new ServiceResponse();
         response.bankServer = "localhost";
