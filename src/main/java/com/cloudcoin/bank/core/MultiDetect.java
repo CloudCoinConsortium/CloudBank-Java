@@ -129,7 +129,7 @@ public class MultiDetect {
                         coin.setPown(pownString.toString());
                     }
                     String filename = CoinUtils.generateFilename(coins[0]);
-                    filename = FileUtils.ensureFilenameUnique(filename, ".stack", folderPath + FileSystem.DetectedPath);
+                    filename = FileUtils.ensureFilepathUnique(filename, ".stack", folderPath + FileSystem.DetectedPath);
                     FileSystem.writeCoinsToSingleStack(coins, filename);
                     FileSystem.removeCoins(coins, folderPath + FileSystem.SuspectPath);
                 } catch (Exception e) {

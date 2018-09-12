@@ -11,7 +11,7 @@ public class ServiceResponse {
     public String status = "fail";
     public String version = "2.00.1";
     public String time = Utils.getDate();
-    public String message = "NO ERROR MESSAGE";
+    public String message;
 
 
     /* Input Fields */

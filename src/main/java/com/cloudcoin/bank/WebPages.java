@@ -119,10 +119,9 @@ public class WebPages {
                 Path path = Paths.get(accountFolder + FileSystem.TrashPath + new Date().toString());
                 Files.createDirectories(path.getParent());
                 Files.write(path, stackBytes, StandardOpenOption.CREATE_NEW);
-            }
-            else {
+            } else {
                 String filename = CoinUtils.generateFilename(coins.get(0));
-                filename = FileUtils.ensureFilenameUnique(filename, ".stack", accountFolder + FileSystem.SuspectPath);
+                filename = FileUtils.ensureFilepathUnique(filename, ".stack", accountFolder + FileSystem.SuspectPath);
                 FileSystem.writeCoinsToSingleStack(coins, filename);
             }
         } catch (IOException e) {
@@ -156,6 +155,105 @@ public class WebPages {
         return Utils.createGson().toJson(response);
     }
 
+    @RequestMapping(value = "/deposit_one_stack_with_change", method = {RequestMethod.POST, RequestMethod.GET})
+    public String depositStackGetChange(@RequestParam(required = false, value = "account") String account,
+                                        @RequestParam(required = false, value = "pk") String key,
+                                        @RequestParam(required = false, value = "stack") String deposit,
+                                        @RequestParam(required = false, value = "amount") String amountInput) {
+        String badLogin = isAccountAndPasswordValid(account, key);
+        if (badLogin != null) {
+            new SimpleLogger().LogBadLogin(badLogin);
+            return badLogin;
+        }
+
+        ServiceResponse response = new ServiceResponse();
+        response.bankServer = "localhost";
+
+        if (deposit == null || deposit.length() == 0) {
+            response.message = "The CloudCoin stack was empty or not included in the post.";
+            response.status = "error";
+            response.receipt = "";
+            response.account = getParameterForLogging(account);
+            response.pk = getParameterForLogging(key);
+            response.stack = getParameterForLogging(deposit);
+            new SimpleLogger().LogBadCall(Utils.createGson().toJson(response));
+            return Utils.createGson().toJson(response);
+        }
+
+        ArrayList<CloudCoin> coins = FileUtils.loadCloudCoinsFromStackJson(deposit);
+        byte[] stackBytes = deposit.getBytes(StandardCharsets.UTF_8);
+        String accountFolder = FileSystem.AccountFolder + key;
+
+        try {
+            if (coins == null || coins.size() == 0) {
+                Path path = Paths.get(accountFolder + FileSystem.TrashPath + new Date().toString());
+                Files.createDirectories(path.getParent());
+                Files.write(path, stackBytes, StandardOpenOption.CREATE_NEW);
+            } else {
+                String filename = CoinUtils.generateFilename(coins.get(0));
+                filename = FileUtils.ensureFilepathUnique(filename, ".stack", accountFolder + FileSystem.SuspectPath);
+                FileSystem.writeCoinsToSingleStack(coins, filename);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            coins = null;
+        }
+
+        if (coins == null || coins.size() == 0) {
+            response.status = "error";
+            response.message = "Error: coins were valid.";
+            response.receipt = "";
+            response.account = getParameterForLogging(account);
+            response.pk = getParameterForLogging(key);
+            response.stack = getParameterForLogging(deposit);
+            new SimpleLogger().LogBadCall(Utils.createGson().toJson(response));
+            return Utils.createGson().toJson(response);
+        }
+
+        String detectResponse = detect(accountFolder);
+        if (detectResponse == null) {
+            response.message = "There was a server error, try again later.";
+            response.status = "error";
+            response.account = getParameterForLogging(account);
+            response.pk = getParameterForLogging(key);
+            response.stack = getParameterForLogging(deposit);
+            new SimpleLogger().LogBadCall(Utils.createGson().toJson(response));
+            return Utils.createGson().toJson(response);
+        }
+        else
+            new SimpleLogger().LogGoodCall(detectResponse);
+
+        int amount = 0;
+        try {
+            amount = Integer.parseInt(amountInput);
+        } catch (NumberFormatException ex) {
+            ex.printStackTrace();
+        } finally {
+            if (amount == 0) {
+                response.message = "Coins were deposited, but the withdraw amount is invalid, so no change is provided." +
+                        " Please withdraw to receive change.";
+                response.account = getParameterForLogging(account);
+                response.pk = getParameterForLogging(key);
+                response.amount = getParameterForLogging(amountInput);
+                new SimpleLogger().LogBadCall(Utils.createGson().toJson(response));
+                return Utils.createGson().toJson(response);
+            }
+        }
+
+        response.message = "Coins were deposited, but an error occured while withdrawing your change." +
+                " Please try again to withdraw your change.";
+
+        String bankFolder = FileSystem.ChangeFolder;
+        String stack = withdraw(bankFolder, amount, response);
+        if ('{' == stack.charAt(0)) {
+            new SimpleLogger().LogBadCall(stack);
+            return stack;
+        }
+
+        return stack;
+    }
+
+
     @RequestMapping(value = "/withdraw_one_stack", method = {RequestMethod.POST, RequestMethod.GET})
     public String withdrawStack(@RequestParam(required = false, value = "account") String account,
                                 @RequestParam(required = false, value = "pk") String key,
@@ -187,30 +285,11 @@ public class WebPages {
 
         String accountFolder = FileSystem.AccountFolder + key;
 
-        int[] bankTotals = Banker.countCoins(accountFolder + FileSystem.BankPath);
-        int[] frackedTotals = Banker.countCoins(accountFolder + FileSystem.FrackedPath);
-        int[] totals = Banker.countCoins(accountFolder);
-        bankTotals[0] += totals[0];
-        bankTotals[1] += totals[1];
-        bankTotals[2] += totals[2];
-        bankTotals[3] += totals[3];
-        bankTotals[4] += totals[4];
-        bankTotals[5] += totals[5];
-        int AvailableCoins = ((bankTotals[5] + frackedTotals[5]) * 250) + ((bankTotals[4] + frackedTotals[4]) * 100) + ((bankTotals[3] + frackedTotals[3]) * 25) + ((bankTotals[2] + frackedTotals[2]) * 5) + ((bankTotals[1] + frackedTotals[1]) * 1);
-        if (amount > AvailableCoins) {
-            response.message = "Request Error: Amount of CloudCoins not available.";
-            response.account = getParameterForLogging(account);
-            response.pk = getParameterForLogging(key);
-            response.amount = getParameterForLogging(amountInput);
-            new SimpleLogger().LogBadCall(Utils.createGson().toJson(response));
-            return Utils.createGson().toJson(response);
-        }
+        response.account = getParameterForLogging(account);
+        response.pk = getParameterForLogging(key);
+        response.amount = getParameterForLogging(amountInput);
 
-        String stack = exportStack(amount, accountFolder, accountFolder + FileSystem.ExportPath, response);
-        if ('{' == stack.charAt(0))
-            new SimpleLogger().LogGoodCall(stack);
-
-        return stack;
+        return withdraw(accountFolder, amount, response);
     }
 
     @RequestMapping(value = "/get_receipt", method = {RequestMethod.POST, RequestMethod.GET})
@@ -621,6 +700,33 @@ public class WebPages {
         return Utils.createGson().toJson(response);
     }
 
+    private String withdraw(String accountFolder, int amount, ServiceResponse response) {
+        int[] bankTotals = Banker.countCoins(accountFolder + FileSystem.BankPath);
+        int[] frackedTotals = Banker.countCoins(accountFolder + FileSystem.FrackedPath);
+        int[] totals = Banker.countCoins(accountFolder);
+        bankTotals[0] += totals[0];
+        bankTotals[1] += totals[1];
+        bankTotals[2] += totals[2];
+        bankTotals[3] += totals[3];
+        bankTotals[4] += totals[4];
+        bankTotals[5] += totals[5];
+        int AvailableCoins = ((bankTotals[5] + frackedTotals[5]) * 250) + ((bankTotals[4] + frackedTotals[4]) * 100) + ((bankTotals[3] + frackedTotals[3]) * 25) + ((bankTotals[2] + frackedTotals[2]) * 5) + ((bankTotals[1] + frackedTotals[1]) * 1);
+        System.out.println("withdrawing: " + amount + " from " + AvailableCoins + " coins in " + accountFolder + FileSystem.BankPath);
+        if (amount > AvailableCoins) {
+            if (response.message == null)
+                response.message = "Request Error: Amount of CloudCoins not available.";
+            response.amount = Integer.toString(amount);
+            new SimpleLogger().LogBadCall(Utils.createGson().toJson(response));
+            return Utils.createGson().toJson(response);
+        }
+
+        String stack = exportStack(amount, accountFolder, accountFolder + FileSystem.ExportPath, response);
+        if ('{' == stack.charAt(0))
+            new SimpleLogger().LogBadCall(stack);
+
+        return stack;
+    }
+
     private String detect(String accountFolder) {
         ServiceResponse response = new ServiceResponse();
         response.bankServer = "localhost";
@@ -733,7 +839,7 @@ public class WebPages {
             return FileSystem.writeCoinsToSingleStack(exportCoins, null);
         } else {
             String filename = (totalSaved + ".CloudCoin");
-            filename = FileUtils.ensureFilenameUnique(filename, ".stack", targetFolder);
+            filename = FileUtils.ensureFilepathUnique(filename, ".stack", targetFolder);
             String stack = FileSystem.writeCoinsToSingleStack(exportCoins, filename);
             if (stack != null) {
                 FileSystem.removeCoins(exportCoins, accountFolder + FileSystem.BankPath);

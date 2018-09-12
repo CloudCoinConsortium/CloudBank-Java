@@ -31,7 +31,7 @@ public class FileUtils {
      * @param filename
      * @return an unused filename
      */
-    public static String ensureFilenameUnique(String filename, String extension, String folder) {
+    public static String ensureFilepathUnique(String filename, String extension, String folder) {
         if (!Files.exists(Paths.get(folder + filename + extension)))
             return folder + filename + extension;
 

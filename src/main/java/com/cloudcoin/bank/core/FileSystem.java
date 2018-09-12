@@ -36,6 +36,7 @@ public class FileSystem {
 
 
     public static String AccountFolder = RootPath + "accounts" + File.separator;
+    public static String ChangeFolder = AccountFolder + "change";
     public static String PasswordFolder = AccountFolder + "Passwords" + File.separator;
     public static String ChecksFolder = RootPath + "checks" + File.separator;
     public static String LogsFolder = RootPath + LogsPath;
@@ -169,6 +170,7 @@ public class FileSystem {
     public static void removeCoins(ArrayList<CloudCoin> cloudCoins, String folder) {
         for (CloudCoin coin : cloudCoins) {
             try {
+                Files.deleteIfExists(Paths.get(coin.getFullFilePath()));
                 Files.deleteIfExists(Paths.get(folder + CoinUtils.generateFilename(coin) + ".stack"));
             } catch (IOException e) {
                 System.out.println(e.getLocalizedMessage());
@@ -318,13 +320,14 @@ public class FileSystem {
             String[] suspectFileNames = FileUtils.selectFileNamesInFolder(targetFolder);
             for (String suspect : suspectFileNames)
                 if (suspect.equals(fileName)) {
-                    newFilename = FileUtils.ensureFilenameUnique(fileName, ".stack", targetFolder);
+                    newFilename = FileUtils.ensureFilepathUnique(fileName, ".stack", targetFolder);
+                    newFilename = newFilename.substring(newFilename.lastIndexOf(File.separatorChar) + 1).replace(".stack.stack", ".stack");
                     break;
                 }
         }
 
         try {
-            Files.move(Paths.get(sourceFolder + fileName), Paths.get(targetFolder + newFilename), StandardCopyOption.REPLACE_EXISTING);
+            Files.move(Paths.get(sourceFolder + fileName), Paths.get(newFilename), StandardCopyOption.REPLACE_EXISTING);
         } catch (Exception e) {
             System.out.println(e.getLocalizedMessage());
             e.printStackTrace();
