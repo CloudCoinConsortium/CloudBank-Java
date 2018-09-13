@@ -39,7 +39,7 @@ public class FileUtils {
         String newFilename;
         int loopCount = 0;
         do {
-            newFilename = filename + Integer.toString(++loopCount);
+            newFilename = filename + '.' + Integer.toString(++loopCount);
         }
         while (Files.exists(Paths.get(folder + newFilename + extension)));
         return folder + newFilename + extension;
@@ -107,7 +107,6 @@ public class FileUtils {
 
             if (null != filenames) {
                 for (File file : filenames) {
-                    System.out.println("found file " + file.toString());
                     if (file.isFile()) {
                         files.add(file.getName());
                     }

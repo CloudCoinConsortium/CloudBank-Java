@@ -1,6 +1,9 @@
 package com.cloudcoin.bank.core;
 
+import com.cloudcoin.bank.utils.CoinUtils;
 import com.cloudcoin.bank.utils.FileUtils;
+
+import java.util.ArrayList;
 
 /**
  * Banker can return a detailed balance of all the coins.
@@ -32,5 +35,16 @@ public class Banker {
             }
         }
         return returnCounts;
+    }
+
+    public static int countCoins(ArrayList<CloudCoin> coins) {
+        return countCoins(coins.toArray(new CloudCoin[0]));
+    }
+    public static int countCoins(CloudCoin[] coins) {
+        int total = 0;
+        for (CloudCoin coin : coins) {
+            total += CoinUtils.getDenomination(coin);
+        }
+        return total;
     }
 }

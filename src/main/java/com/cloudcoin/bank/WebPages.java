@@ -137,9 +137,7 @@ public class WebPages implements ErrorController {
                 Files.createDirectories(path.getParent());
                 Files.write(path, stackBytes, StandardOpenOption.CREATE_NEW);
             } else {
-                String filename = CoinUtils.generateFilename(coins.get(0));
-                filename = FileUtils.ensureFilepathUnique(filename, ".stack", accountFolder + FileSystem.SuspectPath);
-                FileSystem.writeCoinsToSingleStack(coins, filename);
+                FileSystem.writeCoinsToIndividualStacks(coins, accountFolder + FileSystem.SuspectPath);
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -157,10 +155,14 @@ public class WebPages implements ErrorController {
             return Utils.createGson().toJson(response);
         }
 
-        String detectResponse = detect(accountFolder);
-        if (detectResponse != null) {
-            new SimpleLogger().LogGoodCall(detectResponse);
-            return detectResponse;
+        MultiDetectResult detectResponse = detect(accountFolder);
+        if (detectResponse.receipt != null) {
+            response.status = "importing";
+            response.message = "The stack file has been imported and detection will begin automatically so long as " +
+                    "they are not already in bank. Please check your receipt.";
+            response.receipt = detectResponse.receipt;
+            new SimpleLogger().LogGoodCall(Utils.createGson().toJson(response));
+            return Utils.createGson().toJson(response);
         }
 
         response.message = "There was a server error, try again later.";
@@ -200,6 +202,7 @@ public class WebPages implements ErrorController {
         ArrayList<CloudCoin> coins = FileUtils.loadCloudCoinsFromStackJson(deposit);
         byte[] stackBytes = deposit.getBytes(StandardCharsets.UTF_8);
         String accountFolder = FileSystem.AccountFolder + key;
+        String filename;
 
         try {
             if (coins == null || coins.size() == 0) {
@@ -207,9 +210,7 @@ public class WebPages implements ErrorController {
                 Files.createDirectories(path.getParent());
                 Files.write(path, stackBytes, StandardOpenOption.CREATE_NEW);
             } else {
-                String filename = CoinUtils.generateFilename(coins.get(0));
-                filename = FileUtils.ensureFilepathUnique(filename, ".stack", accountFolder + FileSystem.SuspectPath);
-                FileSystem.writeCoinsToSingleStack(coins, filename);
+                FileSystem.writeCoinsToIndividualStacks(coins, accountFolder + FileSystem.SuspectPath);
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -227,7 +228,9 @@ public class WebPages implements ErrorController {
             return Utils.createGson().toJson(response);
         }
 
-        String detectResponse = detect(accountFolder);
+        int totalCoinsDeposited = Banker.countCoins(coins);
+
+        MultiDetectResult detectResponse = detect(accountFolder);
         if (detectResponse == null) {
             response.message = "There was a server error, try again later.";
             response.status = "error";
@@ -237,8 +240,13 @@ public class WebPages implements ErrorController {
             new SimpleLogger().LogBadCall(Utils.createGson().toJson(response));
             return Utils.createGson().toJson(response);
         }
-        else
-            new SimpleLogger().LogGoodCall(detectResponse);
+        else {
+            response.status = "importing";
+            response.message = "The stack file has been imported and detection will begin automatically so long as " +
+                    "they are not already in bank. Please check your receipt.";
+            response.receipt = detectResponse.receipt;
+            new SimpleLogger().LogGoodCall(Utils.createGson().toJson(response));
+        }
 
         int amount = 0;
         try {
@@ -257,17 +265,33 @@ public class WebPages implements ErrorController {
             }
         }
 
-        response.message = "Coins were deposited, but an error occured while withdrawing your change." +
-                " Please try again to withdraw your change.";
+        if (totalCoinsDeposited != detectResponse.coinsPassed) {
+            int difference = totalCoinsDeposited - detectResponse.coinsPassed;
+            if (amount >= difference)
+                response.message = "Coins were deposited, but the amount of valid CloudCoins is less than the withdraw" +
+                        " amount, so no change is provided. Please withdraw to receive change.";
+            else if (difference < 0)
+                response.message = "Coins were deposited, but there were more CloudCoins than expected," +
+                        " so no change is provided. Please withdraw to receive change.";
+            else
+                response.message = "Coins were deposited, but not all CloudCoins were valid," +
+                        " so no change is provided. Please withdraw to receive change.";
 
-        String bankFolder = FileSystem.ChangeFolder;
-        String stack = withdraw(bankFolder, amount, response);
-        if ('{' == stack.charAt(0)) {
-            new SimpleLogger().LogBadCall(stack);
-            return stack;
+            response.receipt = detectResponse.receipt;
+            new SimpleLogger().LogGoodCall(Utils.createGson().toJson(response));
+            return Utils.createGson().toJson(response);
         }
 
-        return stack;
+        String changeFolder = FileSystem.ChangeFolder + FileSystem.BankPath;
+
+        ArrayList<CloudCoin> cloudCoinsToChangeService = getCloudCoins(totalCoinsDeposited, accountFolder);
+        FileSystem.MoveCoins(cloudCoinsToChangeService, accountFolder, changeFolder);
+
+        ArrayList<CloudCoin> cloudCoinsUsersChange = getCloudCoins(totalCoinsDeposited, changeFolder);
+        FileSystem.removeCoins(cloudCoinsUsersChange, changeFolder);
+
+        Stack stack = new Stack(cloudCoinsUsersChange);
+        return Utils.createGson().toJson(stack);
     }
 
 
@@ -540,7 +564,7 @@ public class WebPages implements ErrorController {
         }
     }
 
-    @RequestMapping(value = "/mark_coins_forsale", method = {RequestMethod.POST, RequestMethod.GET})
+    @RequestMapping(value={"/mark_for_sale","/mark_coins_for_sale","/mark_coins_forsale"}, method = {RequestMethod.POST, RequestMethod.GET})
     public String mark_for_sale(@RequestParam(required = false, value = "account") String account,
                                 @RequestParam(required = false, value = "pk") String key,
                                 @RequestParam(required = false, value = "ones") String onesInput,
@@ -744,29 +768,105 @@ public class WebPages implements ErrorController {
         return stack;
     }
 
-    private String detect(String accountFolder) {
-        ServiceResponse response = new ServiceResponse();
-        response.bankServer = "localhost";
+    private MultiDetectResult detect(String accountFolder) {
+        String receiptFileName = FileUtils.randomString(16);
+        MultiDetectResult result = multi_detect(accountFolder, receiptFileName);
 
-        response.receipt = multi_detect(accountFolder);
-        Grader.gradeDetectedFolder(accountFolder);
-        response.status = "importing";
-        response.message = "The stack file has been imported and detection will begin automatically so long as they are not already in bank. Please check your receipt.";
+        int coinsPassed = Grader.gradeDetectedFolder(accountFolder);
+        result.coinsPassed = coinsPassed;
 
-        response.time = Utils.getDate();
-        return Utils.createGson().toJson(response);
+        return result;
     }
 
-    private static String multi_detect(String accountPath) {
+    private static MultiDetectResult multi_detect(String accountPath, String receiptFileName) {
         MultiDetect multiDetector = new MultiDetect();
-        String receiptFileName = FileUtils.randomString(16);
 
         try {
-            multiDetector.detectMulti(receiptFileName, accountPath).get();
+            return multiDetector.detectMulti(receiptFileName, accountPath).get();
         } catch (InterruptedException | ExecutionException e) {
             e.printStackTrace();
         }
-        return receiptFileName;
+        return null;
+    }
+
+    private ArrayList<CloudCoin> getCloudCoins(int amount, String accountFolder) {
+        int[] bankTotals = Banker.countCoins(accountFolder + FileSystem.BankPath);
+        int[] frackedTotals = Banker.countCoins(accountFolder + FileSystem.FrackedPath);
+        int[] totals = Banker.countCoins(accountFolder);
+        bankTotals[0] += totals[0];
+        bankTotals[1] += totals[1];
+        bankTotals[2] += totals[2];
+        bankTotals[3] += totals[3];
+        bankTotals[4] += totals[4];
+        bankTotals[5] += totals[5];
+
+        int exp_1 = 0;
+        int exp_5 = 0;
+        int exp_25 = 0;
+        int exp_100 = 0;
+        int exp_250 = 0;
+        if (amount >= 250 && bankTotals[5] + frackedTotals[5] > 0) {
+            exp_250 = ((amount / 250) < (bankTotals[5] + frackedTotals[5])) ? (amount / 250) : (bankTotals[5] + frackedTotals[5]);
+            amount -= (exp_250 * 250);
+        }
+        if (amount >= 100 && bankTotals[4] + frackedTotals[4] > 0) {
+            exp_100 = ((amount / 100) < (bankTotals[4] + frackedTotals[4])) ? (amount / 100) : (bankTotals[4] + frackedTotals[4]);
+            amount -= (exp_100 * 100);
+        }
+        if (amount >= 25 && bankTotals[3] + frackedTotals[3] > 0) {
+            exp_25 = ((amount / 25) < (bankTotals[3] + frackedTotals[3])) ? (amount / 25) : (bankTotals[3] + frackedTotals[3]);
+            amount -= (exp_25 * 25);
+        }
+        if (amount >= 5 && bankTotals[2] + frackedTotals[2] > 0) {
+            exp_5 = ((amount / 5) < (bankTotals[2] + frackedTotals[2])) ? (amount / 5) : (bankTotals[2] + frackedTotals[2]);
+            amount -= (exp_5 * 5);
+        }
+        if (amount >= 1 && bankTotals[1] + frackedTotals[1] > 0) {
+            exp_1 = (amount < (bankTotals[1] + frackedTotals[1])) ? amount : (bankTotals[1] + frackedTotals[1]);
+            amount -= (exp_1);
+        }
+
+        // Get the CloudCoins that will be used for the export.
+        int totalSaved = exp_1 + (exp_5 * 5) + (exp_25 * 25) + (exp_100 * 100) + (exp_250 * 250);
+        ArrayList<CloudCoin> totalCoins = FileSystem.loadFolderCoins(accountFolder + FileSystem.BankPath);
+        totalCoins.addAll(FileSystem.loadFolderCoins(accountFolder + FileSystem.FrackedPath));
+        totalCoins.addAll(FileSystem.loadFolderCoins(accountFolder));
+
+        ArrayList<CloudCoin> onesToExport = new ArrayList<>();
+        ArrayList<CloudCoin> fivesToExport = new ArrayList<>();
+        ArrayList<CloudCoin> qtrToExport = new ArrayList<>();
+        ArrayList<CloudCoin> hundredsToExport = new ArrayList<>();
+        ArrayList<CloudCoin> twoFiftiesToExport = new ArrayList<>();
+
+        for (int i = 0, totalCoinsSize = totalCoins.size(); i < totalCoinsSize; i++) {
+            CloudCoin coin = totalCoins.get(i);
+            int denomination = CoinUtils.getDenomination(coin);
+            if (denomination == 1) {
+                if (exp_1-- > 0) onesToExport.add(coin);
+                else exp_1 = 0;
+            } else if (denomination == 5) {
+                if (exp_5-- > 0) fivesToExport.add(coin);
+                else exp_5 = 0;
+            } else if (denomination == 25) {
+                if (exp_25-- > 0) qtrToExport.add(coin);
+                else exp_25 = 0;
+            } else if (denomination == 100) {
+                if (exp_100-- > 0) hundredsToExport.add(coin);
+                else exp_100 = 0;
+            } else if (denomination == 250) {
+                if (exp_250-- > 0) twoFiftiesToExport.add(coin);
+                else exp_250 = 0;
+            }
+        }
+
+        ArrayList<CloudCoin> exportCoins = new ArrayList<>();
+        exportCoins.addAll(onesToExport);
+        exportCoins.addAll(fivesToExport);
+        exportCoins.addAll(qtrToExport);
+        exportCoins.addAll(hundredsToExport);
+        exportCoins.addAll(twoFiftiesToExport);
+
+        return exportCoins;
     }
 
     private String exportStack(int amount, String accountFolder, String targetFolder, ServiceResponse response) {

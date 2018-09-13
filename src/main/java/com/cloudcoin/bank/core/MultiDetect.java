@@ -17,7 +17,7 @@ import java.util.concurrent.CompletableFuture;
 
 public class MultiDetect {
 
-    public CompletableFuture detectMulti(String receiptFilename, String folderPath) {
+    public CompletableFuture<MultiDetectResult> detectMulti(String receiptFilename, String folderPath) {
         return CompletableFuture.supplyAsync(() -> {
             boolean stillHaveSuspect = true;
             int coinNames = 0;
@@ -122,21 +122,25 @@ public class MultiDetect {
 
                     for (int j = 0; j < coins.length; j++) {
                         CloudCoin coin = coins[j];
+                        coin.setFolder(folderPath + FileSystem.DetectedPath);
                         StringBuilder pownString = new StringBuilder();
                         coin.setPown("");
                         for (int k = 0; k < Config.nodeCount; k++)
                             pownString.append(raida.nodes[k].MultiResponse.responses[j].outcome, 0, 1);
                         coin.setPown(pownString.toString());
                     }
-                    String filename = CoinUtils.generateFilename(coins[0]);
-                    filename = FileUtils.ensureFilepathUnique(filename, ".stack", folderPath + FileSystem.DetectedPath);
-                    FileSystem.writeCoinsToSingleStack(coins, filename);
+                    FileSystem.writeCoinsToIndividualStacks(coins, folderPath + FileSystem.DetectedPath);
                     FileSystem.removeCoins(coins, folderPath + FileSystem.SuspectPath);
+
+                    MultiDetectResult result = new MultiDetectResult();
+                    result.cloudCoins = coins;
+                    result.receipt = receiptFilename;
+                    return result;
                 } catch (Exception e) {
                     System.out.println("RAIDA#PNC: " + e.getLocalizedMessage());
                 }
             }
-            return "";
+            return null;
         });
     }
 

@@ -11,7 +11,7 @@ public class Grader {
     /**
      * Categorizes coins into folders based on their pown results.
      */
-    public static void gradeDetectedFolder(String folderPath) {
+    public static int gradeDetectedFolder(String folderPath) {
         ArrayList<CloudCoin> detectedCoins = FileSystem.loadFolderCoins(folderPath + FileSystem.DetectedPath);
 
         // Apply Grading to all detected coins at once.
@@ -27,6 +27,9 @@ public class Grader {
             else if (coin.getFolder().equals(folderPath + FileSystem.FrackedPath)) coinsFracked.add(coin);
             else if (coin.getFolder().equals(folderPath + FileSystem.CounterfeitPath)) coinsCounterfeit.add(coin);
             else if (coin.getFolder().equals(folderPath + FileSystem.LostPath)) coinsLost.add(coin);
+            else {
+                System.out.println("folder doesn't match anything: " + coin.getFolder());
+            }
         }
 
         updateLog("Coin Detection finished.");
@@ -37,8 +40,10 @@ public class Grader {
         // Move Coins to their respective folders after sort
         FileSystem.MoveCoins(coinsBank, folderPath + FileSystem.DetectedPath, folderPath + FileSystem.BankPath);
         FileSystem.MoveCoins(coinsFracked, folderPath + FileSystem.DetectedPath, folderPath + FileSystem.FrackedPath);
-        FileSystem.MoveCoins(coinsCounterfeit, folderPath + FileSystem.DetectedPath, folderPath + FileSystem.CounterfeitFolder);
+        FileSystem.MoveCoins(coinsCounterfeit, folderPath + FileSystem.DetectedPath, folderPath + FileSystem.CounterfeitPath);
         FileSystem.MoveCoins(coinsLost, folderPath + FileSystem.DetectedPath, folderPath + FileSystem.LostPath);
+
+        return coinsBank.size();
     }
 
     /**
@@ -53,7 +58,7 @@ public class Grader {
         }
         else {
             if (isHealthySimple(coin.getPown()))
-                coin.setFolder(folderPath + FileSystem.CounterfeitFolder);
+                coin.setFolder(folderPath + FileSystem.CounterfeitPath);
             else
                 coin.setFolder(folderPath + FileSystem.LostPath);
         }
