@@ -386,10 +386,12 @@ public class FileSystem {
             try {
                 Gson gson = Utils.createGson();
                 Stack stack = new Stack(coin);
-                Files.write(Paths.get(targetFolder + fileName + extension), gson.toJson(stack).getBytes(StandardCharsets.UTF_8));
+                System.out.println("3. removing " + sourceFolder + CoinUtils.generateFilename(coin) + extension);
                 Files.deleteIfExists(Paths.get(sourceFolder + CoinUtils.generateFilename(coin) + extension));
                 Files.deleteIfExists(Paths.get(coin.getFolder() + CoinUtils.generateFilename(coin) + extension));
                 Files.deleteIfExists(Paths.get(coin.getFullFilePath()));
+                System.out.println("2. moving " + targetFolder + fileName + extension);
+                Files.write(Paths.get(targetFolder + fileName + extension), gson.toJson(stack).getBytes(StandardCharsets.UTF_8));
             } catch (Exception e) {
                 System.out.println(e.getLocalizedMessage());
                 e.printStackTrace();
