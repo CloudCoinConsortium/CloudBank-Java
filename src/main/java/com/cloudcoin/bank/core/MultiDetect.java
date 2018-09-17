@@ -22,6 +22,9 @@ public class MultiDetect {
             boolean stillHaveSuspect = true;
             int coinNames = 0;
 
+            MultiDetectResult result = new MultiDetectResult();
+            result.receipt = receiptFilename;
+
             while (stillHaveSuspect) {
                 String[] suspectFileNames = FileUtils.selectFileNamesInFolder(folderPath + FileSystem.SuspectPath);
 
@@ -34,22 +37,25 @@ public class MultiDetect {
                         ex.printStackTrace();
                     }
                 }
-                suspectFileNames = FileUtils.selectFileNamesInFolder(folderPath + FileSystem.SuspectPath);
 
-                coinNames = Math.min(suspectFileNames.length, 200);
-                if (suspectFileNames.length <= 200)
+                suspectFileNames = FileUtils.selectFileNamesInFolder(folderPath + FileSystem.SuspectPath);
+                if (result.cloudCoins.size() == 0)
+                    result.cloudCoins = new ArrayList<>(suspectFileNames.length);
+
+                coinNames = Math.min(suspectFileNames.length, Config.multiDetectLoad);
+                if (suspectFileNames.length <= Config.multiDetectLoad)
                     stillHaveSuspect = false;
 
-                CloudCoin[] coins = new CloudCoin[coinNames];
+                ArrayList<CloudCoin> coins = new ArrayList<>(coinNames);
                 Receipt receipt = createReceipt(coinNames, receiptFilename);
 
                 for (int i = 0; i < coinNames; i++) {
                     System.out.println("md dm: file: " + folderPath + FileSystem.SuspectPath + suspectFileNames[i]);
-                    coins[i] = FileUtils.loadCloudCoinsFromStack(folderPath + FileSystem.SuspectPath + suspectFileNames[i]).get(0);
-                    System.out.println("  Now scanning coin " + (i + 1) + " of " + suspectFileNames.length + " for counterfeit. SN 0:" + coins[i].getSn() + ", Denomination: " + CoinUtils.getDenomination(coins[i]));
+                    coins.add(FileUtils.loadCloudCoinsFromStack(folderPath + FileSystem.SuspectPath + suspectFileNames[i]).get(0));
+                    System.out.println("  Now scanning coin " + (i + 1) + " of " + suspectFileNames.length + " for counterfeit. SN 0:" + coins.get(i).getSn() + ", Denomination: " + CoinUtils.getDenomination(coins.get(i)));
                     ReceiptDetail detail = new ReceiptDetail();
-                    detail.sn = coins[i].getSn();
-                    detail.nn = coins[i].getNn();
+                    detail.sn = coins.get(i).getSn();
+                    detail.nn = coins.get(i).getNn();
                     detail.status = "suspect";
                     detail.pown = "uuuuuuuuuuuuuuuuuuuuuuuuu";
                     detail.note = "Waiting";
@@ -57,15 +63,15 @@ public class MultiDetect {
                 }
 
                 RAIDA raida = RAIDA.getInstance();
-                int[] nns = new int[coins.length];
-                int[] sns = new int[coins.length];
+                int[] nns = new int[coins.size()];
+                int[] sns = new int[coins.size()];
                 String[][] ans = new String[Config.nodeCount][];
                 String[][] pans = new String[Config.nodeCount][];
 
-                int[] dens = new int[coins.length]; // Denominations
+                int[] dens = new int[coins.size()]; // Denominations
 
-                for (int i = 0; i < coins.length; i++) {
-                    CloudCoin coin = coins[i];
+                for (int i = 0; i < coins.size(); i++) {
+                    CloudCoin coin = coins.get(i);
                     CoinUtils.generatePAN(coin);
                     nns[i] = coin.getNn();
                     sns[i] = coin.getSn();
@@ -75,12 +81,12 @@ public class MultiDetect {
                     raida.multiRequest = new MultiDetectRequest();
                     raida.multiRequest.timeout = Config.milliSecondsToTimeOut;
                     for (int nodeNumber = 0; nodeNumber < Config.nodeCount; nodeNumber++) {
-                        ans[nodeNumber] = new String[coins.length];
-                        pans[nodeNumber] = new String[coins.length];
+                        ans[nodeNumber] = new String[coins.size()];
+                        pans[nodeNumber] = new String[coins.size()];
 
-                        for (int i = 0; i < coins.length; i++) {
-                            ans[nodeNumber][i] = coins[i].getAn().get(nodeNumber);
-                            pans[nodeNumber][i] = coins[i].pan[nodeNumber];
+                        for (int i = 0; i < coins.size(); i++) {
+                            ans[nodeNumber][i] = coins.get(i).getAn().get(nodeNumber);
+                            pans[nodeNumber][i] = coins.get(i).pan[nodeNumber];
                         }
                         raida.multiRequest.an[nodeNumber] = ans[nodeNumber];
                         raida.multiRequest.pan[nodeNumber] = pans[nodeNumber];
@@ -120,8 +126,8 @@ public class MultiDetect {
                         System.out.println("RAIDA#PNC:" + e.getLocalizedMessage());
                     }
 
-                    for (int j = 0; j < coins.length; j++) {
-                        CloudCoin coin = coins[j];
+                    for (int j = 0; j < coins.size(); j++) {
+                        CloudCoin coin = coins.get(j);
                         coin.setFolder(folderPath + FileSystem.DetectedPath);
                         StringBuilder pownString = new StringBuilder();
                         coin.setPown("");
@@ -132,15 +138,13 @@ public class MultiDetect {
                     FileSystem.writeCoinsToIndividualStacks(coins, folderPath + FileSystem.DetectedPath);
                     FileSystem.removeCoins(coins, folderPath + FileSystem.SuspectPath);
 
-                    MultiDetectResult result = new MultiDetectResult();
-                    result.cloudCoins = coins;
-                    result.receipt = receiptFilename;
-                    return result;
+
+                    result.cloudCoins.addAll(coins);
                 } catch (Exception e) {
                     System.out.println("RAIDA#PNC: " + e.getLocalizedMessage());
                 }
             }
-            return null;
+            return result;
         });
     }
 
