@@ -32,6 +32,7 @@ public class FileUtils {
      * @return an unused filename
      */
     public static String ensureFilepathUnique(String filename, String extension, String folder) {
+        filename = filename.replace(extension, "");
         if (!Files.exists(Paths.get(folder + filename + extension)))
             return folder + filename + extension;
 
@@ -39,7 +40,7 @@ public class FileUtils {
         String newFilename;
         int loopCount = 0;
         do {
-            newFilename = filename + '.' + Integer.toString(++loopCount);
+            newFilename = filename + Integer.toString(++loopCount);
         }
         while (Files.exists(Paths.get(folder + newFilename + extension)));
         return folder + newFilename + extension;

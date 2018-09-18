@@ -156,7 +156,7 @@ public class WebPages implements ErrorController {
         }
 
         MultiDetectResult detectResponse = detect(accountFolder);
-        if (detectResponse.receipt != null) {
+        if (detectResponse != null && detectResponse.receipt != null) {
             response.status = "importing";
             response.message = "The stack file has been imported and detection will begin automatically so long as " +
                     "they are not already in bank. Please check your receipt.";
@@ -165,13 +165,21 @@ public class WebPages implements ErrorController {
             return Utils.createGson().toJson(response);
         }
 
-        response.message = "There was a server error, try again later.";
-        response.status = "error";
-        response.account = getParameterForLogging(account);
-        response.pk = getParameterForLogging(key);
-        response.stack = getParameterForLogging(stack);
-        new SimpleLogger().LogBadCall(Utils.createGson().toJson(response));
-        return Utils.createGson().toJson(response);
+        if (detectResponse != null) {
+            response.message = "The stack files are already in the bank.";
+            response.status = "complete";
+            new SimpleLogger().LogGoodCall(Utils.createGson().toJson(response));
+            return Utils.createGson().toJson(response);
+        }
+        else {
+            response.message = "There was a server error, try again later.";
+            response.status = "error";
+            response.account = getParameterForLogging(account);
+            response.pk = getParameterForLogging(key);
+            response.stack = getParameterForLogging(stack);
+            new SimpleLogger().LogBadCall(Utils.createGson().toJson(response));
+            return Utils.createGson().toJson(response);
+        }
     }
 
     @RequestMapping(value = "/deposit_one_stack_with_change", method = {RequestMethod.POST, RequestMethod.GET})
@@ -772,8 +780,8 @@ public class WebPages implements ErrorController {
         String receiptFileName = FileUtils.randomString(16);
         MultiDetectResult result = multi_detect(accountFolder, receiptFileName);
 
-        int coinsPassed = Grader.gradeDetectedFolder(accountFolder);
-        result.coinsPassed = coinsPassed;
+        if (result != null && result.receipt != null)
+            result.coinsPassed = Grader.gradeDetectedFolder(accountFolder);
 
         return result;
     }
@@ -953,7 +961,8 @@ public class WebPages implements ErrorController {
         exportCoins.addAll(twoFiftiesToExport);
 
         if (targetFolder == null) {
-            return FileSystem.writeCoinsToSingleStack(exportCoins, null);
+            Stack stack = new Stack(exportCoins);
+            return Utils.createGson().toJson(stack);
         } else {
             String filename = (totalSaved + ".CloudCoin");
             filename = FileUtils.ensureFilepathUnique(filename, ".stack", targetFolder);

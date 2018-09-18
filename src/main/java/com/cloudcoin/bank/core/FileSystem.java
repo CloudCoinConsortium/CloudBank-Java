@@ -120,17 +120,14 @@ public class FileSystem {
         ArrayList<CloudCoin> folderCoins = new ArrayList<>();
 
         String[] filenames = FileUtils.selectFileNamesInFolder(folder);
-        String extension;
-        for (int i = 0, length = filenames.length; i < length; i++) {
-            int index = filenames[i].lastIndexOf('.');
+        for (String filename : filenames) {
+            int index = filename.lastIndexOf('.');
             if (index == -1) continue;
 
-            extension = filenames[i].substring(index + 1);
-            String fullFilePath = folder + filenames[i];
+            String extension = filename.substring(index + 1);
+            String fullFilePath = folder + filename;
 
             switch (extension) {
-                case "celeb":
-                case "celebrium":
                 case "stack":
                     ArrayList<CloudCoin> coins = FileUtils.loadCloudCoinsFromStack(fullFilePath);
                     coins.get(0).setFolder(folder);
@@ -200,6 +197,9 @@ public class FileSystem {
             Stack stack = new Stack(coins);
             String json = gson.toJson(stack);
             if (filePath != null) {
+                if (Files.exists(Paths.get(filePath))) {
+                    filePath = filePath.replace(BankPath, TrashPath).replace(FrackedPath, TrashPath);
+                }
                 Path path = Paths.get(filePath);
                 Files.createDirectories(path.getParent());
                 System.out.println("1. wrote " + filePath);
@@ -220,7 +220,12 @@ public class FileSystem {
         try {
             for (CloudCoin coin : coins) {
                 String filename = CoinUtils.generateFilename(coin);
+                if (Files.exists(Paths.get(filePath, CoinUtils.generateFilename(coin)))) {
+                    filePath = filePath.replace(BankPath, TrashPath).replace(FrackedPath, TrashPath);
+                }
+
                 filename = FileUtils.ensureFilepathUnique(filename, ".stack", filePath);
+                filename = filename.replace(".stack.stack", ".stack");
                 Stack stack = new Stack(coin);
                 String json = gson.toJson(stack);
                 if (filename != null) {
@@ -345,15 +350,16 @@ public class FileSystem {
     }
 
     public static void moveFile(String fileName, String sourceFolder, String targetFolder, boolean replaceCoins) {
-        String newFilename = fileName;
+        String newFilename = targetFolder + fileName;
         if (!replaceCoins) {
             String[] suspectFileNames = FileUtils.selectFileNamesInFolder(targetFolder);
-            for (String suspect : suspectFileNames)
+            for (String suspect : suspectFileNames) {
                 if (suspect.equals(fileName)) {
                     newFilename = FileUtils.ensureFilepathUnique(fileName, ".stack", targetFolder);
-                    newFilename = newFilename.substring(newFilename.lastIndexOf(File.separatorChar) + 1).replace(".stack.stack", ".stack");
+                    newFilename = newFilename.replace(".stack.stack", ".stack");
                     break;
                 }
+            }
         }
 
         try {

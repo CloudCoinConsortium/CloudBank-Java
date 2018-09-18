@@ -23,7 +23,6 @@ public class MultiDetect {
             int coinNames = 0;
 
             MultiDetectResult result = new MultiDetectResult();
-            result.receipt = receiptFilename;
 
             while (stillHaveSuspect) {
                 String[] suspectFileNames = FileUtils.selectFileNamesInFolder(folderPath + FileSystem.SuspectPath);
@@ -39,6 +38,9 @@ public class MultiDetect {
                 }
 
                 suspectFileNames = FileUtils.selectFileNamesInFolder(folderPath + FileSystem.SuspectPath);
+                if (suspectFileNames.length == 0)
+                    return result;
+
                 if (result.cloudCoins.size() == 0)
                     result.cloudCoins = new ArrayList<>(suspectFileNames.length);
 
@@ -139,6 +141,7 @@ public class MultiDetect {
                     FileSystem.removeCoins(coins, folderPath + FileSystem.SuspectPath);
 
 
+                    result.receipt = receiptFilename;
                     result.cloudCoins.addAll(coins);
                 } catch (Exception e) {
                     System.out.println("RAIDA#PNC: " + e.getLocalizedMessage());
