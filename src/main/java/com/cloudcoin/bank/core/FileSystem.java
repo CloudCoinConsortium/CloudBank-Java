@@ -17,7 +17,6 @@ public class FileSystem {
 
     /* Fields */
 
-    public static String RootPath = "C:\\CloudBank\\";
     //public static String RootPath = "C:\\CloudBank\\";
     public static String RootPath = Paths.get("").toAbsolutePath().toString() + File.separator;
 
@@ -98,7 +97,12 @@ public class FileSystem {
             Files.createDirectories(Paths.get(LogsFolder));
 
             Files.createDirectories(Paths.get(ChangeFolder));
+            Files.createDirectories(Paths.get(ChangeFolder + DetectedPath));
+            Files.createDirectories(Paths.get(ChangeFolder + ImportPath));
+            Files.createDirectories(Paths.get(ChangeFolder + SuspectPath));
+            Files.createDirectories(Paths.get(ChangeFolder + ReceiptsPath));
             Files.createDirectories(Paths.get(ChangeFolder + BankPath));
+            Files.createDirectories(Paths.get(ChangeFolder + CounterfeitPath));
             Files.createDirectories(Paths.get(ChangeFolder + FrackedPath));
             Files.createDirectories(Paths.get(ChangeFolder + ExportPath));
         } catch (Exception e) {
