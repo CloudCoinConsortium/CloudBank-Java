@@ -18,6 +18,8 @@ public class FileSystem {
     /* Fields */
 
     public static String RootPath = "C:\\CloudBank\\";
+    //public static String RootPath = "C:\\CloudBank\\";
+    public static String RootPath = Paths.get("").toAbsolutePath().toString() + File.separator;
 
 
     public static String DetectedPath = File.separator + Config.TAG_DETECTED + File.separator;

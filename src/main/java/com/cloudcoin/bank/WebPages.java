@@ -30,11 +30,6 @@ public class WebPages implements ErrorController {
 
     /* Web Pages */
 
-    @RequestMapping("/")
-    public String index() {
-        return "Greetings from Spring Boot!";
-    }
-
     @RequestMapping("/error")
     public String error(HttpServletRequest request) {
         ServiceResponse response = new ServiceResponse();
@@ -50,7 +45,7 @@ public class WebPages implements ErrorController {
         return "/error";
     }
 
-    @RequestMapping("/print_welcome")
+    @RequestMapping(value={"/", "/print_welcome"})
     public String print_welcome() {
         ServiceResponse response = new ServiceResponse();
 
@@ -249,6 +244,12 @@ public class WebPages implements ErrorController {
             return Utils.createGson().toJson(response);
         }
         else {
+            if (detectResponse.receipt == null) {
+                response.message = "The stack files are already in the bank.";
+                response.status = "complete";
+                new SimpleLogger().LogGoodCall(Utils.createGson().toJson(response));
+                return Utils.createGson().toJson(response);
+            }
             response.status = "importing";
             response.message = "The stack file has been imported and detection will begin automatically so long as " +
                     "they are not already in bank. Please check your receipt.";
