@@ -18,7 +18,7 @@ apply plugin: 'org.springframework.boot'
 apply plugin: 'io.spring.dependency-management'
 
 group = 'com.cloudcoin.bank'
-version = '1.0.05-J'
+version = '1.0.06-J'
 sourceCompatibility = 1.8
 
 repositories {

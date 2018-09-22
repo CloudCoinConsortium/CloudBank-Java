@@ -136,6 +136,7 @@ public class MultiDetect {
                         for (int k = 0; k < Config.nodeCount; k++)
                             pownString.append(raida.nodes[k].MultiResponse.responses[j].outcome, 0, 1);
                         coin.setPown(pownString.toString());
+                        CoinUtils.setAnsToPans(coin);
                     }
                     FileSystem.writeCoinsToIndividualStacks(coins, folderPath + FileSystem.DetectedPath);
                     FileSystem.removeCoins(coins, folderPath + FileSystem.SuspectPath);

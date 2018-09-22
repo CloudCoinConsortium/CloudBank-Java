@@ -17,11 +17,11 @@ public class FileSystem {
 
     /* Fields */
 
-    //public static String RootPath = "C:\\CloudBank\\";
     public static String RootPath = Paths.get("").toAbsolutePath().toString() + File.separator;
 
 
     public static String DetectedPath = File.separator + Config.TAG_DETECTED + File.separator;
+    public static String ImportPath = File.separator + Config.TAG_IMPORT + File.separator;
     public static String SuspectPath = File.separator + Config.TAG_SUSPECT + File.separator;
     public static String ExportPath = File.separator + Config.TAG_EXPORT + File.separator;
 

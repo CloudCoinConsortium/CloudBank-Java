@@ -31,7 +31,7 @@ public class SimpleLogger {
         initialize(fullFilePath);
     }
     public SimpleLogger() {
-        initialize("C:\\CloudBank" + FileSystem.LogsPath + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmssSSS")).toLowerCase() + ".log");
+        initialize(FileSystem.LogsFolder + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmssSSS")).toLowerCase() + ".log");
     }
 
 
@@ -87,6 +87,10 @@ public class SimpleLogger {
 
     public void LogGoodCall(String text) {
         writeFormattedLog(LogLevel.BADCALL, text);
+    }
+
+    public void LogFatal(String text) {
+        writeFormattedLog(LogLevel.FATAL, text);
     }
 
     /**
