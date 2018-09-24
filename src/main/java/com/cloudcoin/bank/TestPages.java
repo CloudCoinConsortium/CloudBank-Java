@@ -137,8 +137,8 @@ public class TestPages {
             "<div class=\"masthead\">\n" +
             "<ul class=\"nav nav-pills pull-right\">\n" +
             "<li class=\"active\" class=\"btn btn-small\"><a href=\"#\" class=\"btn btn-small\"><b> Home</b></a></li>\n" +
-            "<li><a href=\"about/\" class=\"btn btn-small\">About</a></li>\n" +
-            "<li><a href=\"contact/\" class=\"btn btn-small\">Contact</a></li>\n" +
+            "<li><a href=\"/sandbox/about/\" class=\"btn btn-small\">About</a></li>\n" +
+            "<li><a href=\"/sandbox/contact/\" class=\"btn btn-small\">Contact</a></li>\n" +
             "</ul>\n" +
             "</div>\n" +
             "<hr>\n" +
@@ -155,26 +155,26 @@ public class TestPages {
             "<div class=\"row-fluid marketing\">\n" +
             "<div class=\"span6\">\n" +
             "<h1>CloudServer Services Categories</h1>\n" +
-            "<a href=\"../sandbox/print_welcome\" target=\"_blank\">Print Welcome Service</a>\n" +
+            "<a href=\"../sandbox/print_welcome\">Print Welcome Service</a>\n" +
             "<br>\n" +
             "<h2>CloudBanking</h2>\n" +
-            "<a href=\"../sandbox/echo\" target=\"_blank\">Echo Service</a>\n" +
+            "<a href=\"../sandbox/echo\">Echo Service</a>\n" +
             "<br>\n" +
-            "<a href=\"../sandbox/show_coins\" target=\"_blank\">Show Coins Service</a>\n" +
+            "<a href=\"../sandbox/show_coins\">Show Coins Service</a>\n" +
             "<br>\n" +
-            "<a href=\"../sandbox/deposit\" target=\"_blank\">Deposit One Stack Service</a>\n" +
+            "<a href=\"../sandbox/deposit\">Deposit One Stack Service</a>\n" +
             "<br>\n" +
-            "<a href=\"../sandbox/withdraw\" target=\"_blank\">Withdraw One Stack Service</a>\n" +
+            "<a href=\"../sandbox/withdraw\">Withdraw One Stack Service</a>\n" +
             "<br>\n" +
-            "<a href=\"../sandbox/get_receipt\" target=\"_blank\">Get Receipt Service</a>\n" +
+            "<a href=\"../sandbox/get_receipt\">Get Receipt Service</a>\n" +
             "<br>\n" +
-            "<a href=\"../sandbox/write_check\" target=\"_blank\">Write Check Service</a>\n" +
+            "<a href=\"../sandbox/write_check\">Write Check Service</a>\n" +
             "<br>\n" +
-            "<a href=\"../sandbox/cash_check\" target=\"_blank\">Cash Check Service</a>\n" +
+            "<a href=\"../sandbox/cash_check\">Cash Check Service</a>\n" +
             "<br>\n" +
-            "<a href=\"../sandbox/mark_for_sale\" target=\"_blank\">Mark Coins For Sale</a>\n" +
+            "<a href=\"../sandbox/mark_for_sale\">Mark Coins For Sale</a>\n" +
             "<br>\n" +
-            "<a href=\"../sandbox/deposit_with_change\" target=\"_blank\">Deposit With Change</a>\n" +
+            "<a href=\"../sandbox/deposit_with_change\">Deposit With Change</a>\n" +
             "<br>\n" +
             "\n" +
             "<br>\n" +
@@ -251,8 +251,8 @@ public class TestPages {
             "<div class=\"masthead\">\n" +
             "<ul class=\"nav nav-pills pull-right\">\n" +
             "<li class=\"active\" class=\"btn btn-small\"> <a href=\"/sandbox\" class=\"btn btn-small\">Home</a></li>\n" +
-            "<li><a href=\"about.html\" class=\"btn btn-small\">About</a></li>\n" +
-            "<li><a href=\"contact.html\" class=\"btn btn-small\">Contact</a></li>\n" +
+            "<li><a href=\"/sandbox/about\" class=\"btn btn-small\"><b>About</b></a></li>\n" +
+            "<li><a href=\"/sandbox/contact\" class=\"btn btn-small\">Contact</a></li>\n" +
             "</ul>\n" +
             "<h3 class=\"muted\">CloudCoin Consortium CloudBank</h3>\n" +
             "</div>\n" +
@@ -337,8 +337,8 @@ public class TestPages {
             "<div class=\"masthead\">\n" +
             "<ul class=\"nav nav-pills pull-right\">\n" +
             "<li class=\"btn btn-small\"> <a href=\"/sandbox\" class=\"btn btn-small\">Home</a></li>\n" +
-            "<li class=\"btn btn-small\"><a href=\"about.html\" class=\"btn btn-small\">About</a></li>\n" +
-            "<li class=\"btn btn-small\"><a href=\"contact.html\" class=\"btn btn-small\"><b>Contact</b></a></li>\n" +
+            "<li class=\"btn btn-small\"><a href=\"/sandbox/about\" class=\"btn btn-small\">About</a></li>\n" +
+            "<li class=\"btn btn-small\"><a href=\"/sandbox/contact\" class=\"btn btn-small\"><b>Contact</b></a></li>\n" +
             "</ul>\n" +
             "<h3 class=\"muted\">Contact CloudCoin Consortium CloudBank Team</h3>\n" +
             "</div>\n" +
@@ -420,16 +420,16 @@ public class TestPages {
             "<div class=\"container-narrow\">\n" +
             "<div class=\"masthead\">\n" +
             "<ul class=\"nav nav-pills pull-right\">\n" +
-            "<li class=\"active\"><a href=\"https://bank.cloudcoin.global/qa1/\">Home</a></li>\n" +
+            "<li class=\"active\"><a href=\"../sandbox/\">Home</a></li>\n" +
             "</ul>\n" +
             "<h3 class=\"muted\">Cash Check Test</h3>\n" +
             "</div>\n" +
             "<hr>\n" +
             "<div>\n" +
             "<p>Pres the button below to execute the following Post request</p>\n" +
-            "<p>https://bank.cloudcoin.global/service/checks.aspx</p>\n" +
+            "<p>https://bank.cloudcoin.global/sandbox/check</p>\n" +
             "<div>\n" +
-            "<form name=\"input\" action=\"../service/cash_checks.aspx\" method=\"post\">\n" +
+            "<form name=\"input\" action=\"/cash_check\" method=\"post\">\n" +
             "<br>\n" +
             "Check ID:\n" +
             "<br>\n" +
@@ -537,9 +537,9 @@ public class TestPages {
             "\n" +
             "<div>\n" +
             "Account: <br>\n"+
-            "<input name=\"account\"><br>\n"+
+            "<input type=\"text\" id=\"account\" size=\"50\" name=\"account\"><br>\n" +
             "Private Key: <br>\n"+
-            "<input name=\"pk\"><br><br>\n"+
+            "<input type=\"text\" id=\"PrivateKey\" size=\"50\" name=\"pk\"><br><br>\n" +
             "</div>\n" +
             "<div>\n" +
             "<br>\n" +
@@ -736,25 +736,23 @@ public class TestPages {
             "<ul class=\"nav nav-pills pull-right\">\n" +
             "<li class=\"active\"><a href=\"/sandbox\">Home</a></li>\n" +
             "</ul>\n" +
-            "<h1 class=\"muted\">Deposit One Stack Service</h1>\n" +
-            "<h3 class=\"muted\">Test Deposit One Stack Service</h3>\n" +
+            "<h1 class=\"muted\">Deposit With Change Service</h1>\n" +
+            "<h3 class=\"muted\">Test Deposit With Change Service</h3>\n" +
             "</div>\n" +
             "<hr>\n" +
             "<div id=\"page-wrapper\">\n" +
-            "<h3>Deposit One Stack File</h3>\n" +
+            "<h3>Deposit With Change File</h3>\n" +
             "<p>Allows you to upload a stack of CloudCoins into your bank. You must know your account and PK.</p>\n" +
-            "<form method=\"POST\" action=\"/deposit_with_change.php\">\n" +
+            "<form method=\"POST\" action=\"/deposit_with_change\">\n" +
             "<input type=\"hidden\" id=\"stack\" name=\"stack\">\n" +
             "\n" +
             "<div>\n" +
-            "Account:<br>\n" +
-            "<input type=\"text\" id=\"account\" size=\"50\" name=\"account\">\n" +
-            "</div>\n" +
-            "Private Key:<br>\n" +
-            "<input type=\"text\" id=\"PrivateKey\" size=\"50\" name=\"pk\">\n" +
-            "</div>\n" +
+            "Account: <br>\n"+
+            "<input name=\"account\"><br>\n"+
+            "Private Key: <br>\n"+
+            "<input name=\"pk\"><br><br>\n"+
             "Amount:<br>\n" +
-            "<input type=\"text\" id=\"Amount\" size=\"50\" name=\"amount\">\n" +
+            "<input type=\"text\" id=\"amount\" size=\"50\" name=\"amount\">\n" +
             "</div>\n" +
             "<div>\n" +
             "<br>\n" +
@@ -762,7 +760,7 @@ public class TestPages {
             "<div>\n" +
             "<br>\n" +
             "Select a text file:\n" +
-            "<input type=\"file\" id=\"fileInput\" name=\"stack\"><br><br>\n" +
+            "<input type=\"file\" id=\"fileInput\"><br><br>\n" +
             "</div>\n" +
             "<button class=\"btn btn-large btn-success\">POST Stack (after you choose File)</button>\n" +
             "</form>\n" +
@@ -1079,10 +1077,10 @@ public class TestPages {
             "<h1 class=\"muted\">Receipt</h1>\n" +
             "<h3 class=\"muted\">Get Receipt Test</h3>\n" +
             "</div>\n" +
-            "https://<span id=\"url\">bank.cloudcoin.global</span>//ge<a href=\"/cdn-cgi/l/email-protection\" class=\"__cf_email__\" data-cfemail=\"166249647375737f66622964782b73702326262e2e752e24272e7770732325757324737572202323752475212e2030777575796378622b557a79637255797f7856\">[email&#160;protected]</a>protonmai.com\n" +
+            "https://<span id=\"url\">bank.cloudcoin.global</span>/ge<a href=\"/cdn-cgi/l/email-protection\" class=\"__cf_email__\" data-cfemail=\"166249647375737f66622964782b73702326262e2e752e24272e7770732325757324737572202323752475212e2030777575796378622b557a79637255797f7856\">[email&#160;protected]</a>protonmai.com\n" +
             "<hr>\n" +
             "<div>\n" +
-            "<form name=\"input\" action=\"//get_receipt\" method=\"GET\">\n" +
+            "<form name=\"input\" action=\"/get_receipt\" method=\"GET\">\n" +
             "<br>\n" +
             "Receipt Number:\n" +
             "<br>\n" +
@@ -1102,7 +1100,7 @@ public class TestPages {
             "<p>Asks the CloudBank to send it a receipt to see what coins where authenticated.</p>\n" +
             "<b>Sample GET Request:</b>\n" +
             "<pre>\t\t  \n" +
-            "\thttps://<span id=\"url2\">bank.cloudcoin.global</span>//ge<a href=\"/cdn-cgi/l/email-protection\" class=\"__cf_email__\" data-cfemail=\"dbaf84a9beb8beb2abafe4a9b5e6bebdeeebebe3e3b8e3e9eae3babdbeeee8b8bee9beb8bfedeeeeb8e9b8ece3edfdbab8b8b4aeb5afe698b7b4aebf98b4b2b59b\">[email&#160;protected]</a>protonmai.com\n" +
+            "\thttps://<span id=\"url2\">bank.cloudcoin.global</span>/ge<a href=\"/cdn-cgi/l/email-protection\" class=\"__cf_email__\" data-cfemail=\"dbaf84a9beb8beb2abafe4a9b5e6bebdeeebebe3e3b8e3e9eae3babdbeeee8b8bee9beb8bfedeeeeb8e9b8ece3edfdbab8b8b4aeb5afe698b7b4aebf98b4b2b59b\">[email&#160;protected]</a>protonmai.com\n" +
             "\n" +
             "\t\t  </pre>\n" +
             "<b>Sample response if good</b> If powning process has not been started\n" +
@@ -1273,17 +1271,33 @@ public class TestPages {
             "<ul class=\"nav nav-pills pull-right\">\n" +
             "<li class=\"active\"><a href=\"/sandbox\">Home</a></li>\n" +
             "</ul>\n" +
-            "<h1 class=\"muted\">Mark Coins For Sale</h1>\n" +
-            "<h3 class=\"muted\">Test Page</h3>\n" +
+            "<h1 class=\"muted\">Mark For Sale Service</h1>\n" +
+            "<h3 class=\"muted\">Test Mark For Sale Service</h3>\n" +
             "</div>\n" +
             "<hr>\n" +
-            "<div class=\"jumbotron\">\n" +
-            "<pre <p>\t\tPress the button get the following URL:\n" +
-            "\t\t<span id=\"url\">https://bank.cloudcoin.global//mark_coins_for_sale/ </span>\n" +
-            "\t\t</p>\n" +
-            "        <a class=\"btn btn-large btn-success\" href=\"/mark_coins_for_sale/\">GET /mark_coins_for_sale</a>\n" +
-            "      </div>\n" +
-            "\n" +
+            "<div id=\"page-wrapper\">\n" +
+            "<h3>Mark For Sale File</h3>\n" +
+            "<p>Allows you to mark any number of CloudCoins for sale. You must know your account and PK.</p>\n" +
+            "<form method=\"POST\" action=\"/mark_for_sale\">\n" +
+            "<div>\n" +
+            "Account: <br>\n"+
+            "<input type=\"text\" id=\"account\" size=\"50\" name=\"account\"><br>\n" +
+            "Private Key: <br>\n"+
+            "<input type=\"text\" id=\"PrivateKey\" size=\"50\" name=\"pk\"><br><br>\n" +
+            "Ones: <br>\n"+
+            "<input type=\"text\" id=\"ones\" size=\"50\" name=\"ones\"><br>\n" +
+            "Fives: <br>\n"+
+            "<input type=\"text\" id=\"fives\" size=\"50\" name=\"fives\"><br>\n" +
+            "Twenty-Fives: <br>\n"+
+            "<input type=\"text\" id=\"twentyfives\" size=\"50\" name=\"twentyfives\"><br>\n" +
+            "Hundreds: <br>\n"+
+            "<input type=\"text\" id=\"hundreds\" size=\"50\" name=\"hundreds\"><br>\n" +
+            "Two-Hundred-Fifties: <br>\n"+
+            "<input type=\"text\" id=\"twohundredfifties\" size=\"50\" name=\"twohundredfifties\"><br>\n" +
+            "</div>\n" +
+            "</div>\n" +
+            "<button class=\"btn btn-large btn-success\">POST</button>\n" +
+            "</form>\n" +
             "      <hr>\n" +
             "\n" +
             "\t  \n" +
@@ -1839,7 +1853,6 @@ public class TestPages {
             "<br>\n" +
             "<select name=\"action\">\n" +
             "<option value=\"url\" selected>url</option>\n" +
-            "<option value=\"email\">email</option>\n" +
             "</select>\n" +
             "<br>\n" +
             "Amount:\n" +

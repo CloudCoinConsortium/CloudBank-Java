@@ -31,7 +31,7 @@ public class SimpleLogger {
         initialize(fullFilePath);
     }
     public SimpleLogger() {
-        initialize(FileSystem.LogsFolder + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmssSSS")).toLowerCase() + ".log");
+        initialize(FileSystem.LogsFolder);
     }
 
 
@@ -154,9 +154,17 @@ public class SimpleLogger {
      */
     private void writeLine(String text, boolean append) {
         try {
+            String filepath = fullFilePath + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmssSSS")).toLowerCase();
+            String finalFilepath = filepath;
+            int counter = 1;
+            while (Files.exists(Paths.get(finalFilepath + ".log"))) {
+                finalFilepath = filepath + '.' + counter++;
+            }
+            finalFilepath += ".log";
+
             StandardOpenOption option = (append) ? StandardOpenOption.APPEND : StandardOpenOption.TRUNCATE_EXISTING;
 
-            Path path = Paths.get(fullFilePath);
+            Path path = Paths.get(finalFilepath);
             if (!Files.exists(path)) {
                 Files.createDirectories(path.getParent());
                 Files.createFile(path);

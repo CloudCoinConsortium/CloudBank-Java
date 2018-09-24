@@ -177,7 +177,7 @@ public class WebPages implements ErrorController {
         }
     }
 
-    @RequestMapping(value = "/deposit_one_stack_with_change", method = {RequestMethod.POST, RequestMethod.GET})
+    @RequestMapping(value={"/deposit_with_change", "/deposit_one_stack_with_change"}, method = {RequestMethod.POST, RequestMethod.GET})
     public String depositStackGetChange(@RequestParam(required = false, value = "account") String account,
                                         @RequestParam(required = false, value = "pk") String key,
                                         @RequestParam(required = false, value = "stack") String deposit,
