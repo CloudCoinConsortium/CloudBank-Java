@@ -30,6 +30,7 @@ public class MultiDetect {
                 for (String suspectFileName : suspectFileNames) {
                     try {
                         if (Files.exists(Paths.get(folderPath + FileSystem.BankPath + suspectFileName)) ||
+                                Files.exists(Paths.get(folderPath + FileSystem.FrackedPath + suspectFileName)) ||
                                 Files.exists(Paths.get(folderPath + FileSystem.DetectedPath + suspectFileName)))
                             FileSystem.moveFile(suspectFileName, folderPath + FileSystem.SuspectPath, folderPath + FileSystem.TrashPath, false);
                     } catch (SecurityException ex) {
@@ -62,6 +63,13 @@ public class MultiDetect {
                     detail.pown = "uuuuuuuuuuuuuuuuuuuuuuuuu";
                     detail.note = "Waiting";
                     receipt.rd[i] = detail;
+                }
+
+                try {
+                    String json = Utils.createGson().toJson(receipt);
+                    Files.write(Paths.get(folderPath + FileSystem.ReceiptsPath + receiptFilename + ".json"), json.getBytes(StandardCharsets.UTF_8));
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
 
                 RAIDA raida = RAIDA.getInstance();
@@ -109,24 +117,6 @@ public class MultiDetect {
                 try {
                     System.out.println("Waiting for futures...");
                     CompletableFuture.allOf(detectTasks.toArray(new CompletableFuture[0])).get();
-                } catch (Exception e) {
-                    System.out.println("RAIDA#PNC:" + e.getLocalizedMessage());
-                }
-
-                try {
-                    String json = Utils.createGson().toJson(receipt);
-                    Files.write(Paths.get(folderPath + FileSystem.ReceiptsPath + receiptFilename + ".json"), json.getBytes(StandardCharsets.UTF_8));
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-
-                try {
-                    try {
-                        System.out.println("Waiting for futures...");
-                        CompletableFuture.allOf(detectTasks.toArray(new CompletableFuture[0])).get();
-                    } catch (Exception e) {
-                        System.out.println("RAIDA#PNC:" + e.getLocalizedMessage());
-                    }
 
                     for (int j = 0; j < coins.size(); j++) {
                         CloudCoin coin = coins.get(j);
@@ -141,6 +131,23 @@ public class MultiDetect {
                     FileSystem.writeCoinsToIndividualStacks(coins, folderPath + FileSystem.DetectedPath);
                     FileSystem.removeCoins(coins, folderPath + FileSystem.SuspectPath);
 
+                    for (int i = 0; i < coins.size(); i++) {
+                        CloudCoin coin = coins.get(i);
+                        ReceiptDetail detail = new ReceiptDetail();
+                        detail.sn = coin.getSn();
+                        detail.nn = coin.getNn();
+                        detail.status = CoinUtils.getDetectionResult(coin);
+                        detail.pown = coin.getPown();
+                        detail.note = "Deposit complete";
+                        receipt.rd[i] = detail;
+                    }
+
+                    try {
+                        String json = Utils.createGson().toJson(receipt);
+                        Files.write(Paths.get(folderPath + FileSystem.ReceiptsPath + receiptFilename + ".json"), json.getBytes(StandardCharsets.UTF_8));
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
 
                     result.receipt = receiptFilename;
                     result.cloudCoins.addAll(coins);
