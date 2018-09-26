@@ -702,7 +702,7 @@ public class WebPages implements ErrorController {
             return Utils.createGson().toJson(response);
         }
 
-        int totalCoinsValidated = Banker.countCoins(coins);
+        int totalDeposited = Banker.countCoins(coins);
 
         MultiDetectResult detectResponse = detect(accountFolder);
         if (detectResponse == null) {
@@ -712,36 +712,41 @@ public class WebPages implements ErrorController {
             new SimpleLogger().LogBadCall(Utils.createGson().toJson(response));
             return Utils.createGson().toJson(response);
         }
-        else {
-            if (detectResponse.receipt == null) {
-                response.message = "The stack files are already in the bank.";
-                response.status = "complete";
-                new SimpleLogger().LogGoodCall(Utils.createGson().toJson(response));
-                return Utils.createGson().toJson(response);
-            }
-            response.status = "importing";
-            response.message = "The stack file has been imported and detection will begin automatically so long as " +
-                    "they are not already in bank. Please check your receipt.";
-            response.receipt = detectResponse.receipt;
+        if (detectResponse.receipt == null) {
+            response.message = "The stack files are already in the bank.";
+            response.status = "complete";
             new SimpleLogger().LogGoodCall(Utils.createGson().toJson(response));
+            return Utils.createGson().toJson(response);
         }
 
-        String Ones = getParameter(onesInput);
-        String Fives = getParameter(fivesInput);
-        String TwentyFives = getParameter(twentyFivesInput);
-        String Hundreds = getParameter(hundredsInput);
-        String TwoHundredFifties = getParameter(twoHundredFiftiesInput);
-        int ones, fives, twentyFives, hundreds, twoHundredFifties, changeAmount;
-        ones = Utils.tryParseInt(Ones);
-        fives = Utils.tryParseInt(Fives);
-        twentyFives = Utils.tryParseInt(TwentyFives);
-        hundreds = Utils.tryParseInt(Hundreds);
-        twoHundredFifties = Utils.tryParseInt(TwoHundredFifties);
-        changeAmount = ones + fives + twentyFives + hundreds + twoHundredFifties;
+        response.status = "importing";
+        response.message = "The stack file has been imported and detection will begin automatically so long as " +
+                "they are not already in bank. Please check your receipt.";
+        response.receipt = detectResponse.receipt;
+        new SimpleLogger().LogGoodCall(Utils.createGson().toJson(response));
 
-        System.out.println(totalCoinsValidated + ", " + detectResponse.coinsPassed);
-        if (totalCoinsValidated != detectResponse.coinsPassed) {
-            int difference = totalCoinsValidated - detectResponse.coinsPassed;
+        int ones = Utils.tryParseInt(getParameter(onesInput));
+        int fives = Utils.tryParseInt(getParameter(fivesInput));
+        int twentyFives = Utils.tryParseInt(getParameter(twentyFivesInput));
+        int hundreds = Utils.tryParseInt(getParameter(hundredsInput));
+        int twoHundredFifties = Utils.tryParseInt(getParameter(twoHundredFiftiesInput));
+        int changeAmount = ones + fives + twentyFives + hundreds + twoHundredFifties;
+
+        if (changeAmount <= 0) {
+            response.message = "Coins were deposited, but no change was requested.";
+            new SimpleLogger().LogGoodCall(Utils.createGson().toJson(response));
+            return Utils.createGson().toJson(response);
+        }
+        if (changeAmount > detectResponse.coinsPassed) {
+            response.message = "Coins were deposited, but the amount of valid CloudCoins is less than the withdraw" +
+                    " amount, so no change is provided. Please withdraw to receive change.";
+            new SimpleLogger().LogGoodCall(Utils.createGson().toJson(response));
+            return Utils.createGson().toJson(response);
+        }
+
+        System.out.println(totalDeposited + ", " + detectResponse.coinsPassed);
+        if (totalDeposited != detectResponse.coinsPassed) {
+            int difference = totalDeposited - detectResponse.coinsPassed;
             if (changeAmount >= difference)
                 response.message = "Coins were deposited, but the amount of valid CloudCoins is less than the withdraw" +
                         " amount, so no change is provided. Please withdraw to receive change.";
@@ -752,7 +757,6 @@ public class WebPages implements ErrorController {
                 response.message = "Coins were deposited, but not all CloudCoins were valid," +
                         " so no change is provided. Please withdraw to receive change.";
 
-            response.receipt = detectResponse.receipt;
             new SimpleLogger().LogGoodCall(Utils.createGson().toJson(response));
             return Utils.createGson().toJson(response);
         }
@@ -985,15 +989,17 @@ public class WebPages implements ErrorController {
     }
 
     private ArrayList<CloudCoin> getCloudCoins(int ones, int fives, int twentyFives, int hundreds,
-                                               int towHundredFifities, String accountFolder) {
-        int[] coinType = Banker.countCoins(accountFolder + FileSystem.BankPath);
+                                               int twoHundredFifities, String accountFolder) {
+        int[] coinsNeeded = new int[] {ones, fives, twentyFives, hundreds, twoHundredFifities};
+
+        int[] coinTotal = Banker.countCoins(accountFolder + FileSystem.BankPath);
         int[] frackedTotals = Banker.countCoins(accountFolder + FileSystem.FrackedPath);
-        coinType[0] += frackedTotals[0];
-        coinType[1] += frackedTotals[1];
-        coinType[2] += frackedTotals[2];
-        coinType[3] += frackedTotals[3];
-        coinType[4] += frackedTotals[4];
-        coinType[5] += frackedTotals[5];
+        coinTotal[0] += frackedTotals[0];
+        coinTotal[1] += frackedTotals[1];
+        coinTotal[2] += frackedTotals[2];
+        coinTotal[3] += frackedTotals[3];
+        coinTotal[4] += frackedTotals[4];
+        coinTotal[5] += frackedTotals[5];
 
         // Get the CloudCoins that will be used for the export.
         ArrayList<CloudCoin> totalCoins = FileSystem.loadFolderCoins(accountFolder + FileSystem.BankPath);
@@ -1009,20 +1015,30 @@ public class WebPages implements ErrorController {
             CloudCoin coin = totalCoins.get(i);
             int denomination = CoinUtils.getDenomination(coin);
             if (denomination == 1) {
-                if (coinType[0]-- > 0) onesToExport.add(coin);
-                else coinType[0] = 0;
+                if (coinsNeeded[0] <= 0) continue;
+                else coinsNeeded[0]--;
+                if (coinTotal[0]-- > 0) onesToExport.add(coin);
+                else coinTotal[0] = 0;
             } else if (denomination == 5) {
-                if (coinType[1]-- > 0) fivesToExport.add(coin);
-                else coinType[1] = 0;
+                if (coinsNeeded[1] <= 0) continue;
+                else coinsNeeded[1]--;
+                if (coinTotal[1]-- > 0) fivesToExport.add(coin);
+                else coinTotal[1] = 0;
             } else if (denomination == 25) {
-                if (coinType[2]-- > 0) qtrToExport.add(coin);
-                else coinType[2] = 0;
+                if (coinsNeeded[2] <= 0) continue;
+                else coinsNeeded[2]--;
+                if (coinTotal[2]-- > 0) qtrToExport.add(coin);
+                else coinTotal[2] = 0;
             } else if (denomination == 100) {
-                if (coinType[3]-- > 0) hundredsToExport.add(coin);
-                else coinType[3] = 0;
+                if (coinsNeeded[3] <= 0) continue;
+                else coinsNeeded[3]--;
+                if (coinTotal[3]-- > 0) hundredsToExport.add(coin);
+                else coinTotal[3] = 0;
             } else if (denomination == 250) {
-                if (coinType[4]-- > 0) twoFiftiesToExport.add(coin);
-                else coinType[4] = 0;
+                if (coinsNeeded[4] <= 0) continue;
+                else coinsNeeded[4]--;
+                if (coinTotal[4]-- > 0) twoFiftiesToExport.add(coin);
+                else coinTotal[4] = 0;
             }
         }
 

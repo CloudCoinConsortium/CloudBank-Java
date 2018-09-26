@@ -117,7 +117,11 @@ public class MultiDetect {
                 try {
                     System.out.println("Waiting for futures...");
                     CompletableFuture.allOf(detectTasks.toArray(new CompletableFuture[0])).get();
+                } catch (InterruptedException | ExecutionException e) {
+                    System.out.println("RAIDA#PNC#NODES: " + e.getLocalizedMessage());
+                }
 
+                try {
                     for (int j = 0; j < coins.size(); j++) {
                         CloudCoin coin = coins.get(j);
                         coin.setFolder(folderPath + FileSystem.DetectedPath);

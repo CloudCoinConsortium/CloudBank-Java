@@ -43,7 +43,7 @@ public class Grader {
         FileSystem.MoveCoins(coinsCounterfeit, folderPath + FileSystem.DetectedPath, folderPath + FileSystem.CounterfeitPath);
         FileSystem.MoveCoins(coinsLost, folderPath + FileSystem.DetectedPath, folderPath + FileSystem.LostPath);
 
-        return coinsBank.size();
+        return coinsBank.size() + coinsFracked.size();
     }
 
     /**
