@@ -73,7 +73,7 @@ public class Node {
 
     /* Methods */
 
-    public CompletableFuture<Response> Echo() {
+    public CompletableFuture<Response> echo() {
         return CompletableFuture.supplyAsync(() -> {
             Response echoResponse = new Response();
             echoResponse.fullRequest = this.fullUrl + "echo";

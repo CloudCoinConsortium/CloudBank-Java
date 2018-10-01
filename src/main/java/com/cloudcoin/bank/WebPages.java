@@ -45,7 +45,7 @@ public class WebPages implements ErrorController {
         return "/error";
     }
 
-    @RequestMapping(value={"/", "/print_welcome"})
+    @RequestMapping(value = {"/", "/print_welcome"})
     public String print_welcome() {
         ServiceResponse response = new ServiceResponse();
 
@@ -165,8 +165,7 @@ public class WebPages implements ErrorController {
             response.status = "complete";
             new SimpleLogger().LogGoodCall(Utils.createGson().toJson(response));
             return Utils.createGson().toJson(response);
-        }
-        else {
+        } else {
             response.message = "There was a server error, try again later.";
             response.status = "error";
             response.account = getParameterForLogging(account);
@@ -177,7 +176,7 @@ public class WebPages implements ErrorController {
         }
     }
 
-    @RequestMapping(value={"/deposit_with_change", "/deposit_one_stack_with_change"}, method = {RequestMethod.POST, RequestMethod.GET})
+    @RequestMapping(value = {"/deposit_with_change", "/deposit_one_stack_with_change"}, method = {RequestMethod.POST, RequestMethod.GET})
     public String depositStackGetChange(@RequestParam(required = false, value = "account") String account,
                                         @RequestParam(required = false, value = "pk") String key,
                                         @RequestParam(required = false, value = "stack") String deposit,
@@ -242,8 +241,7 @@ public class WebPages implements ErrorController {
             response.stack = getParameterForLogging(deposit);
             new SimpleLogger().LogBadCall(Utils.createGson().toJson(response));
             return Utils.createGson().toJson(response);
-        }
-        else {
+        } else {
             if (detectResponse.receipt == null) {
                 response.message = "The stack files are already in the bank.";
                 response.status = "complete";
@@ -527,7 +525,7 @@ public class WebPages implements ErrorController {
         return CheckHtml;
     }
 
-    @RequestMapping(value={"/cash_check", "/cash_checks"}, method = {RequestMethod.POST, RequestMethod.GET})
+    @RequestMapping(value = {"/cash_check", "/cash_checks"}, method = {RequestMethod.POST, RequestMethod.GET})
     public String cash_check(@RequestParam(required = false, value = "id") String checkId) {
         ServiceResponse response = new ServiceResponse();
         response.bankServer = "localhost";
@@ -573,7 +571,7 @@ public class WebPages implements ErrorController {
         }
     }
 
-    @RequestMapping(value={"/mark_for_sale","/mark_coins_for_sale","/mark_coins_forsale"}, method = {RequestMethod.POST, RequestMethod.GET})
+    @RequestMapping(value = {"/mark_for_sale", "/mark_coins_for_sale", "/mark_coins_forsale"}, method = {RequestMethod.POST, RequestMethod.GET})
     public String mark_for_sale(@RequestParam(required = false, value = "account") String account,
                                 @RequestParam(required = false, value = "pk") String key,
                                 @RequestParam(required = false, value = "ones") String onesInput,
@@ -611,46 +609,16 @@ public class WebPages implements ErrorController {
         String accountFolder = FileSystem.AccountFolder + key;
 
         int[] saleCoins = GetCoinsCurrentlyMarkedForSale(accountFolder);
-        if (Ones.length() != 0) {
-            if (ones != saleCoins[0]) {
-                if (ones < saleCoins[0])
-                    UnMarkCoins("1", saleCoins[0] - ones, accountFolder);
-                else
-                    MarkCoins("1", ones - saleCoins[0], accountFolder);
-            }
-        }
-        if (Fives.length() != 0) {
-            if (fives != saleCoins[1]) {
-                if (fives < saleCoins[1])
-                    UnMarkCoins("5", saleCoins[1] - fives, accountFolder);
-                else
-                    MarkCoins("5", fives - saleCoins[1], accountFolder);
-            }
-        }
-        if (TwentyFives.length() != 0) {
-            if (twentyFives != saleCoins[2]) {
-                if (twentyFives < saleCoins[2])
-                    UnMarkCoins("25", saleCoins[2] - twentyFives, accountFolder);
-                else
-                    MarkCoins("25", twentyFives - saleCoins[2], accountFolder);
-            }
-        }
-        if (Hundreds.length() != 0) {
-            if (hundreds != saleCoins[3]) {
-                if (hundreds < saleCoins[3])
-                    UnMarkCoins("100", saleCoins[3] - hundreds, accountFolder);
-                else
-                    MarkCoins("100", hundreds - saleCoins[3], accountFolder);
-            }
-        }
-        if (TwoHundredFifties.length() != 0) {
-            if (twoHundredFifties != saleCoins[4]) {
-                if (twoHundredFifties < saleCoins[4])
-                    UnMarkCoins("250", saleCoins[4] - twoHundredFifties, accountFolder);
-                else
-                    MarkCoins("250", twoHundredFifties - saleCoins[4], accountFolder);
-            }
-        }
+        if (Ones.length() != 0 && ones != saleCoins[0])
+                UpdateSaleCoins("1", Math.abs(saleCoins[0] - ones), accountFolder, (ones > saleCoins[0]));
+        if (Fives.length() != 0 && fives != saleCoins[1])
+                UpdateSaleCoins("5", Math.abs(saleCoins[1] - fives), accountFolder, (fives > saleCoins[1]));
+        if (TwentyFives.length() != 0 && twentyFives != saleCoins[2])
+                UpdateSaleCoins("25", Math.abs(saleCoins[2] - twentyFives), accountFolder, (twentyFives > saleCoins[2]));
+        if (Hundreds.length() != 0 && hundreds != saleCoins[3])
+                UpdateSaleCoins("100", Math.abs(saleCoins[3] - hundreds), accountFolder, (hundreds > saleCoins[3]));
+        if (TwoHundredFifties.length() != 0 && twoHundredFifties != saleCoins[4])
+                UpdateSaleCoins("250", Math.abs(saleCoins[4] - twoHundredFifties), accountFolder, (twoHundredFifties > saleCoins[4]));
 
         response.status = "success";
         response.message = "Coins Marked for Sale";
@@ -990,7 +958,7 @@ public class WebPages implements ErrorController {
 
     private ArrayList<CloudCoin> getCloudCoins(int ones, int fives, int twentyFives, int hundreds,
                                                int twoHundredFifities, String accountFolder) {
-        int[] coinsNeeded = new int[] {ones, fives, twentyFives, hundreds, twoHundredFifities};
+        int[] coinsNeeded = new int[]{ones, fives, twentyFives, hundreds, twoHundredFifities};
 
         int[] coinTotal = Banker.countCoins(accountFolder + FileSystem.BankPath);
         int[] frackedTotals = Banker.countCoins(accountFolder + FileSystem.FrackedPath);
@@ -1156,9 +1124,9 @@ public class WebPages implements ErrorController {
 
     private int[] GetCoinsCurrentlyMarkedForSale(String accountFolder) {
         int[] markedCoins = new int[5];
-        String[] files = FileUtils.selectFileNamesInFolder(accountFolder + FileSystem.BankPath);
+        String[] filesBank = FileUtils.selectFileNamesInFolder(accountFolder + FileSystem.BankPath);
 
-        for (String file : files) {
+        for (String file : filesBank) {
             if (file.contains("forsale")) {
                 String denomination = file.substring(0, file.indexOf('.'));
                 if ("1".equals(denomination))
@@ -1176,11 +1144,43 @@ public class WebPages implements ErrorController {
         return markedCoins;
     }
 
+    private void UpdateSaleCoins(String denomination, int number, String coinsFolder, boolean addSaleCoins) {
+        // NOTE: If you're concerned about BREAKING CODE WITH UPDATES, then compare this method and the old methods, and see which is more broken.
+        // This is the best solution with our current folder-based system. The same exact code gets run for each folder, and for marking or unmarking.
+        // The reason is because the differences are handled in the method variables, rather than risking the coder doing it by hand.
+        number = UpdateSaleCoinsInSpecificFolder(denomination, number, coinsFolder + FileSystem.BankPath, addSaleCoins);
+        //number = UpdateSaleCoinsInSpecificFolder(denomination, number, coinsFolder + FileSystem.FrackedPath, addSaleCoins);
+    }
+
+    private int UpdateSaleCoinsInSpecificFolder(String denomination, int number, String coinsFolder, boolean addSaleCoins) {
+        System.out.println("Updating " + number + " coins in " + coinsFolder);
+        String[] files = FileUtils.selectFileNamesInFolder(coinsFolder);
+        for (String file : files) {
+            if (number <= 0) return 0;
+            if (file.contains("forsale") == !addSaleCoins) {
+                String noteAmount = file.substring(0, file.indexOf('.'));
+                if (noteAmount.equals(denomination)) {
+                    int end = file.lastIndexOf('.');
+                    String newFilename = (addSaleCoins) ?
+                            file.substring(0, end) + ".forsale" + file.substring(end) :
+                            file.replace(".forsale", "");
+                    try {
+                        Files.move(Paths.get(coinsFolder + file), Paths.get(coinsFolder + newFilename), StandardCopyOption.REPLACE_EXISTING);
+                        number--;
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }
+        return number;
+    }
+
     private void MarkCoins(String denomination, int number, String accountFolder) {
         String bankFolder = accountFolder + FileSystem.BankPath;
         String[] files = FileUtils.selectFileNamesInFolder(bankFolder);
         for (String file : files) {
-            if (number <= 0) break;
+            if (number <= 0) return;
             if (!file.contains("forsale")) {
                 String noteAmount = file.substring(0, file.indexOf('.'));
                 if (noteAmount.equals(denomination)) {
@@ -1195,9 +1195,34 @@ public class WebPages implements ErrorController {
                 }
             }
         }
+        // An example of a lazy bugfix, resembling our old developers code. Many lines of code get duplicated, and becomes harder to update.
+        // Especially if these codeblocks get copied somewhere else, and developers forget to update that code. Out of sight, out of mind.
+        // Bug1: Notice that the only change is from bankFolder to frackedFolder. When copied like this, lines can be forgotten, and create bugs.
+        // Bug2: This same codeblock also needs duplicated in UnMarkCoins, which may easily be overlooked, and create more bugs.
+        String frackedFolder = accountFolder + FileSystem.FrackedPath;
+        files = FileUtils.selectFileNamesInFolder(frackedFolder);
+        for (String file : files) {
+            if (number <= 0) return;
+            if (!file.contains("forsale")) {
+                String noteAmount = file.substring(0, file.indexOf('.'));
+                if (noteAmount.equals(denomination)) {
+                    int end = file.lastIndexOf('.');
+                    String newFilename = file.substring(0, end) + ".forsale" + file.substring(end);
+                    try {
+                        Files.move(Paths.get(frackedFolder + file), Paths.get(frackedFolder + newFilename), StandardCopyOption.REPLACE_EXISTING);
+                        number--;
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }
     }
 
     private void UnMarkCoins(String denomination, int number, String accountFolder) {
+        // This is also a bad example of copied code, because this method was copied from MarkCoins, with few minor changes.
+        // Instead, these two methods should be combined into one, which the ability to switch between the two different functionality.
+        // Note that the this code was not duplicated for the Fracked folder like the other method: this is very typical with copied code.
         String bankFolder = accountFolder + FileSystem.BankPath;
         String[] files = FileUtils.selectFileNamesInFolder(bankFolder);
         for (String file : files) {
@@ -1205,7 +1230,7 @@ public class WebPages implements ErrorController {
             if (file.contains("forsale")) {
                 String noteAmount = file.substring(0, file.indexOf('.'));
                 if (noteAmount.equals(denomination)) {
-                    String newFilename = file.replace("forsale", "").replace("..", ".");
+                    String newFilename = file.replace(".forsale", "");
                     try {
                         Files.move(Paths.get(bankFolder + file), Paths.get(bankFolder + newFilename), StandardCopyOption.REPLACE_EXISTING);
                         number--;

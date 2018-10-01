@@ -24,14 +24,12 @@ public class SimpleLogger {
 
     /**
      * Initialize a new instance of SimpleLogger class.
-     *
-     * @param fullFilePath the absolute filepath of the log.
      */
-    public SimpleLogger(String fullFilePath) {
-        initialize(fullFilePath);
-    }
     public SimpleLogger() {
         initialize(FileSystem.LogsFolder);
+    }
+    public SimpleLogger(String fullFilePath) {
+        initialize(fullFilePath);
     }
 
 
@@ -86,7 +84,7 @@ public class SimpleLogger {
     }
 
     public void LogGoodCall(String text) {
-        writeFormattedLog(LogLevel.BADCALL, text);
+        writeFormattedLog(LogLevel.GOODCALL, text);
     }
 
     public void LogFatal(String text) {

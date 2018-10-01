@@ -1,5 +1,6 @@
 package com.cloudcoin.bank.core;
 
+import com.cloudcoin.bank.Grader;
 import com.cloudcoin.bank.utils.CoinUtils;
 import com.cloudcoin.bank.utils.FileUtils;
 import com.cloudcoin.bank.utils.Utils;
@@ -14,6 +15,7 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 public class MultiDetect {
 
@@ -53,9 +55,9 @@ public class MultiDetect {
                 Receipt receipt = createReceipt(coinNames, receiptFilename);
 
                 for (int i = 0; i < coinNames; i++) {
-                    System.out.println("md dm: file: " + folderPath + FileSystem.SuspectPath + suspectFileNames[i]);
+                    //System.out.println("md dm: file: " + folderPath + FileSystem.SuspectPath + suspectFileNames[i]);
                     coins.add(FileUtils.loadCloudCoinsFromStack(folderPath + FileSystem.SuspectPath + suspectFileNames[i]).get(0));
-                    System.out.println("  Now scanning coin " + (i + 1) + " of " + suspectFileNames.length + " for counterfeit. SN 0:" + coins.get(i).getSn() + ", Denomination: " + CoinUtils.getDenomination(coins.get(i)));
+                    //System.out.println("  Now scanning coin " + (i + 1) + " of " + suspectFileNames.length + " for counterfeit. SN 0:" + coins.get(i).getSn() + ", Denomination: " + CoinUtils.getDenomination(coins.get(i)));
                     ReceiptDetail detail = new ReceiptDetail();
                     detail.sn = coins.get(i).getSn();
                     detail.nn = coins.get(i).getNn();
@@ -137,6 +139,19 @@ public class MultiDetect {
 
                     for (int i = 0; i < coins.size(); i++) {
                         CloudCoin coin = coins.get(i);
+                        if (Grader.isPassingSimple(coin.getPown())) {
+                            if (Grader.isFrackedSimple(coin.getPown()))
+                                receipt.total_fracked++;
+                            else
+                                receipt.total_authentic++;
+                        }
+                        else {
+                            if (Grader.isHealthySimple(coin.getPown()))
+                                receipt.total_counterfeit++;
+                            else
+                                receipt.total_lost++;
+                        }
+
                         ReceiptDetail detail = new ReceiptDetail();
                         detail.sn = coin.getSn();
                         detail.nn = coin.getNn();

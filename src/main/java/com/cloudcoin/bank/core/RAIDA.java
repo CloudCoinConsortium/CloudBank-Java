@@ -2,21 +2,10 @@ package com.cloudcoin.bank.core;
 
 import com.cloudcoin.bank.utils.CoinUtils;
 import com.cloudcoin.bank.utils.SimpleLogger;
-import com.cloudcoin.bank.utils.Utils;
-import com.google.gson.Gson;
 import org.asynchttpclient.*;
-import org.json.JSONException;
-import org.json.JSONObject;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.sql.Array;
-import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.concurrent.*;
 
 public class RAIDA {
@@ -99,7 +88,7 @@ public class RAIDA {
     public ArrayList<CompletableFuture<Response>> getEchoTasks() {
         ArrayList<CompletableFuture<Response>> echoTasks = new ArrayList<>();
         for (int i = 0; i < nodes.length; i++) {
-            echoTasks.add(nodes[i].Echo());
+            echoTasks.add(nodes[i].echo());
         }
         return echoTasks;
     }
