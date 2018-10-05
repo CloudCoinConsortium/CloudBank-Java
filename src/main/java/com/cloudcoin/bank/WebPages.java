@@ -1125,6 +1125,7 @@ public class WebPages implements ErrorController {
     private int[] GetCoinsCurrentlyMarkedForSale(String accountFolder) {
         int[] markedCoins = new int[5];
         String[] filesBank = FileUtils.selectFileNamesInFolder(accountFolder + FileSystem.BankPath);
+        //String[] filesFracked = FileUtils.selectFileNamesInFolder(accountFolder + FileSystem.FrackedPath);
 
         for (String file : filesBank) {
             if (file.contains("forsale")) {
@@ -1141,6 +1142,24 @@ public class WebPages implements ErrorController {
                     markedCoins[4]++;
             }
         }
+        /*
+        for (String file : filesFracked) {
+            if (file.contains("forsale")) {
+                String denomination = file.substring(0, file.indexOf('.'));
+                if ("1".equals(denomination))
+                    markedCoins[0]++;
+                else if ("5".equals(denomination))
+                    markedCoins[1]++;
+                else if ("25".equals(denomination))
+                    markedCoins[2]++;
+                else if ("100".equals(denomination))
+                    markedCoins[3]++;
+                else if ("250".equals(denomination))
+                    markedCoins[4]++;
+            }
+        }
+        */
+
         return markedCoins;
     }
 

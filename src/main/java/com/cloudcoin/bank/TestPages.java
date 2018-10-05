@@ -426,10 +426,10 @@ public class TestPages {
             "</div>\n" +
             "<hr>\n" +
             "<div>\n" +
-            "<p>Pres the button below to execute the following Post request</p>\n" +
+            "<p>Pres the button below to execute the following Get request</p>\n" +
             "<p>https://bank.cloudcoin.global/sandbox/check</p>\n" +
             "<div>\n" +
-            "<form name=\"input\" action=\"/cash_check\" method=\"post\">\n" +
+            "<form name=\"input\" action=\"/cash_check\" method=\"get\">\n" +
             "<br>\n" +
             "Check ID:\n" +
             "<br>\n" +
@@ -532,7 +532,7 @@ public class TestPages {
             "<div id=\"page-wrapper\">\n" +
             "<h3>Deposit One Stack File</h3>\n" +
             "<p>Allows you to upload a stack of CloudCoins into your bank. You must know your account and PK.</p>\n" +
-            "<form method=\"POST\" action=\"/deposit_one_stack\">\n" +
+            "<form method=\"GET\" action=\"/deposit_one_stack\">\n" +
             "<input type=\"hidden\" id=\"stack\" name=\"stack\">\n" +
             "\n" +
             "<div>\n" +
@@ -549,7 +549,7 @@ public class TestPages {
             "Select a text file:\n" +
             "<input type=\"file\" id=\"fileInput\"><br><br>\n" +
             "</div>\n" +
-            "<button class=\"btn btn-large btn-success\">POST Stack (after you choose File)</button>\n" +
+            "<button class=\"btn btn-large btn-success\">GET Stack (after you choose File)</button>\n" +
             "</form>\n" +
             "\n" +
             "<pre id=\"fileDisplayArea\"><pre>\t\t\n" +
@@ -601,7 +601,7 @@ public class TestPages {
             "          <h4>public deposit_one_stack</h4>\n" +
             "           <p>The program must put a stack file in a folder that is accessible via the web to cors on the CloudBank Server. </p>\n" +
             "\t\t  \n" +
-            "\t\t  <b>Sample POST Request:</b>\n" +
+            "\t\t  <b>Sample GET Request:</b>\n" +
             "\t\t  <pre>\t\t<span id=\"url\">  \n" +
             "\thttps://bank.cloudcoin.global//deposit_one_stack/?</span>\n" +
             "stack=\n" +
@@ -743,7 +743,7 @@ public class TestPages {
             "<div id=\"page-wrapper\">\n" +
             "<h3>Deposit With Change File</h3>\n" +
             "<p>Allows you to upload a stack of CloudCoins into your bank. You must know your account and PK.</p>\n" +
-            "<form method=\"POST\" action=\"/deposit_with_change\">\n" +
+            "<form method=\"GET\" action=\"/deposit_with_change\">\n" +
             "<input type=\"hidden\" id=\"stack\" name=\"stack\">\n" +
             "\n" +
             "<div>\n" +
@@ -762,7 +762,7 @@ public class TestPages {
             "Select a text file:\n" +
             "<input type=\"file\" id=\"fileInput\"><br><br>\n" +
             "</div>\n" +
-            "<button class=\"btn btn-large btn-success\">POST Stack (after you choose File)</button>\n" +
+            "<button class=\"btn btn-large btn-success\">GET Stack (after you choose File)</button>\n" +
             "</form>\n" +
             "\n" +
             "<pre id=\"fileDisplayArea\"><pre>\t\t\n" +
@@ -814,7 +814,7 @@ public class TestPages {
             "          <h4>public deposit_one_stack</h4>\n" +
             "           <p>The program must put a stack file in a folder that is accessible via the web to cors on the CloudBank Server. </p>\n" +
             "\t\t  \n" +
-            "\t\t  <b>Sample POST Request:</b>\n" +
+            "\t\t  <b>Sample GET Request:</b>\n" +
             "\t\t  <pre>\t\t<span id=\"url\">  \n" +
             "\thttps://bank.cloudcoin.global//deposit_one_stack/?</span>\n" +
             "stack=\n" +
@@ -1278,7 +1278,7 @@ public class TestPages {
             "<div id=\"page-wrapper\">\n" +
             "<h3>Mark For Sale File</h3>\n" +
             "<p>Allows you to mark any number of CloudCoins for sale. You must know your account and PK.</p>\n" +
-            "<form method=\"POST\" action=\"/mark_for_sale\">\n" +
+            "<form method=\"GET\" action=\"/mark_for_sale\">\n" +
             "<div>\n" +
             "Account: <br>\n"+
             "<input type=\"text\" id=\"account\" size=\"50\" name=\"account\"><br>\n" +
@@ -1296,7 +1296,7 @@ public class TestPages {
             "<input type=\"text\" id=\"twohundredfifties\" size=\"50\" name=\"twohundredfifties\"><br>\n" +
             "</div>\n" +
             "</div>\n" +
-            "<button class=\"btn btn-large btn-success\">POST</button>\n" +
+            "<button class=\"btn btn-large btn-success\">GET</button>\n" +
             "</form>\n" +
             "      <hr>\n" +
             "\n" +
@@ -1677,7 +1677,7 @@ public class TestPages {
             "GET Stack from CloudBank using:\n" +
             "<pre>\thttps://<span id=\"url\"></span>//withdraw_one_stack?a<a href=\"/cdn-cgi/l/email-protection\" class=\"__cf_email__\" data-cfemail=\"2845475d465c151a1d1c0e5843154d4e1d181810104b101a1910494e4d1d1b4b4d1a4d4b4c1e1d1d4b1a4b1f101e0e494b4b475d465c156b44475d4c6b47414668\">[email&#160;protected]</a>Protonmail.com\n" +
             "</pre>\n" +
-            "<form name=\"input\" action=\"/withdraw_one_stack/\" method=\"POST\">\n" +
+            "<form name=\"input\" action=\"/withdraw_one_stack/\" method=\"GET\">\n" +
             "<br>\n" +
             "Amount:\n" +
             "<br>\n" +
@@ -1838,10 +1838,10 @@ public class TestPages {
             "</div>\n" +
             "<hr>\n" +
             "<div>\n" +
-            "<p>Pres the button below to execute the following Post request</p>\n" +
+            "<p>Pres the button below to execute the following Get request</p>\n" +
             "<p>https://bank.cloudcoin.global//write_check/</p>\n" +
             "<div>\n" +
-            "<form name=\"input\" action=\"/write_check/\" method=\"post\">\n" +
+            "<form name=\"input\" action=\"/write_check/\" method=\"get\">\n" +
             "<br>\n" +
             "Account: <br>\n" +
             "<input name=\"account\"><br>\n" +
