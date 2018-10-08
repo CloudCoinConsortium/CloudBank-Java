@@ -102,10 +102,15 @@ public class WebPages implements ErrorController {
     public String depositStack(@RequestParam(required = false, value = "account") String account,
                                @RequestParam(required = false, value = "pk") String key,
                                @RequestParam(required = false, value = "stack") String stack) {
-        String badLogin = isAccountAndPasswordValid(account, key);
+        /*String badLogin = isAccountAndPasswordValid(account, key);
         if (badLogin != null) {
             new SimpleLogger().LogBadLogin(badLogin);
             return badLogin;
+        }*/
+        String accountResponse = isAccountValid(account);
+        if ('{' == accountResponse.charAt(0)) {
+            new SimpleLogger().LogBadLogin(accountResponse);
+            return accountResponse;
         }
 
         ServiceResponse response = new ServiceResponse();
@@ -124,7 +129,8 @@ public class WebPages implements ErrorController {
 
         ArrayList<CloudCoin> coins = FileUtils.loadCloudCoinsFromStackJson(stack);
         byte[] stackBytes = stack.getBytes(StandardCharsets.UTF_8);
-        String accountFolder = FileSystem.AccountFolder + key;
+        //String accountFolder = FileSystem.AccountFolder + key;
+        String accountFolder = FileSystem.AccountFolder + accountResponse;
 
         try {
             if (coins == null || coins.size() == 0) {
@@ -181,10 +187,15 @@ public class WebPages implements ErrorController {
                                         @RequestParam(required = false, value = "pk") String key,
                                         @RequestParam(required = false, value = "stack") String deposit,
                                         @RequestParam(required = false, value = "amount") String amountInput) {
-        String badLogin = isAccountAndPasswordValid(account, key);
+        /*String badLogin = isAccountAndPasswordValid(account, key);
         if (badLogin != null) {
             new SimpleLogger().LogBadLogin(badLogin);
             return badLogin;
+        }*/
+        String accountResponse = isAccountValid(account);
+        if ('{' == accountResponse.charAt(0)) {
+            new SimpleLogger().LogBadLogin(accountResponse);
+            return accountResponse;
         }
 
         ServiceResponse response = new ServiceResponse();
@@ -203,7 +214,8 @@ public class WebPages implements ErrorController {
 
         ArrayList<CloudCoin> coins = FileUtils.loadCloudCoinsFromStackJson(deposit);
         byte[] stackBytes = deposit.getBytes(StandardCharsets.UTF_8);
-        String accountFolder = FileSystem.AccountFolder + key;
+        //String accountFolder = FileSystem.AccountFolder + key;
+        String accountFolder = FileSystem.AccountFolder + accountResponse;
         String filename;
 
         try {
