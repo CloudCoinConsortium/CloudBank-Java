@@ -72,6 +72,11 @@ public class TestPages {
         return htmlWriteCheck;
     }
 
+    @RequestMapping(value = "/sandbox/create_account")
+    public String testCreateAccount() {
+        return htmlCreateAccount;
+    }
+
     
     public static final String htmlHome = "<!DOCTYPE html>\n" +
             "<html lang=\"en\">\n" +
@@ -175,6 +180,8 @@ public class TestPages {
             "<a href=\"../sandbox/mark_for_sale\">Mark Coins For Sale</a>\n" +
             "<br>\n" +
             "<a href=\"../sandbox/deposit_with_change\">Deposit With Change</a>\n" +
+            "<br>\n" +
+            "<a href=\"../sandbox/create_account\">Create Account</a>\n" +
             "<br>\n" +
             "\n" +
             "<br>\n" +
@@ -1917,6 +1924,104 @@ public class TestPages {
             "\t\t\t\t\n" +
             "\t\t  </pre>\n" +
             "</div>\n" +
+            "<hr>\n" +
+            "</div> \n" +
+            "<script data-cfasync=\"false\" src=\"/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js\"></script><script>\n" +
+            "var CurrentUrl=window.location.pathname ;\n" +
+            "\t\tdocument.getElementById(\"url\").innerHTML=CurrentUrl;\n" +
+            "</script>\n" +
+            "\n" +
+            "\n" +
+            "</body>\n" +
+            "</html>\n" +
+            "\n";
+
+    public static final String htmlCreateAccount = "\n" +
+            "\n" +
+            "\n" +
+            "<!DOCTYPE html>\n" +
+            "<html lang=\"en\">\n" +
+            "<head>\n" +
+            "<meta charset=\"utf-8\">\n" +
+            "<title>Template &middot; Bootstrap 2.2.2 Documentation - BootstrapDocs</title>\n" +
+            "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n" +
+            "<meta name=\"description\" content=\"\">\n" +
+            "<meta name=\"author\" content=\"\">\n" +
+            "\n" +
+            "<link href=\"../css/bootstrap2.css\" rel=\"stylesheet\">\n" +
+            "<style type=\"text/css\">\n" +
+            "      body {\n" +
+            "        padding-top: 20px;\n" +
+            "        padding-bottom: 40px;\n" +
+            "      }\n" +
+            "\n" +
+            "      /* Custom container */\n" +
+            "      .container-narrow {\n" +
+            "        margin: 0 auto;\n" +
+            "        max-width: 700px;\n" +
+            "      }\n" +
+            "      .container-narrow > hr {\n" +
+            "        margin: 30px 0;\n" +
+            "      }\n" +
+            "\n" +
+            "      /* Main marketing message and sign up button */\n" +
+            "      .jumbotron {\n" +
+            "        margin: 60px 0;\n" +
+            "        text-align: center;\n" +
+            "      }\n" +
+            "      .jumbotron h1 {\n" +
+            "        font-size: 72px;\n" +
+            "        line-height: 1;\n" +
+            "      }\n" +
+            "      .jumbotron .btn {\n" +
+            "        font-size: 21px;\n" +
+            "        padding: 14px 24px;\n" +
+            "      }\n" +
+            "\n" +
+            "      /* Supporting marketing content */\n" +
+            "      .marketing {\n" +
+            "        margin: 60px 0;\n" +
+            "      }\n" +
+            "      .marketing p + h4 {\n" +
+            "        margin-top: 28px;\n" +
+            "      }\n" +
+            "    </style>\n" +
+            "<link href=\"../css/bootstrap-responsive.css\" rel=\"stylesheet\">\n" +
+            "\n" +
+            "<!--[if lt IE 9]>\n" +
+            "      <script src=\"http://html5shim.googlecode.com/svn/trunk/html5.js\"></script>\n" +
+            "    <![endif]-->\n" +
+            "\n" +
+            "</head>\n" +
+            "<body>\n" +
+            "<div class=\"container-narrow\">\n" +
+            "<div class=\"masthead\">\n" +
+            "<ul class=\"nav nav-pills pull-right\">\n" +
+            "<li class=\"active\"><a href=\"/sandbox\">Home</a></li>\n" +
+            "</ul>\n" +
+            "<h3 class=\"muted\">Create Account Test</h3>\n" +
+            "</div>\n" +
+            "<hr>\n" +
+            "<div>\n" +
+            "<p>Pres the button below to execute the following Get request</p>\n" +
+            "<p>https://bank.cloudcoin.global//create_account/</p>\n" +
+            "<div>\n" +
+            "<form name=\"input\" action=\"/create_account/\" method=\"get\">\n" +
+            "<br>\n" +
+            "Account: <br>\n" +
+            "<input name=\"account\"><br>\n" +
+            "Private Key:\n" +
+            "<br>\n" +
+            "<input type=\"Text\" id=\"pk\" size=\"50\" name=\"pk\" value=\"\">\n" +
+            "<br>\n" +
+            "<input type=\"submit\" class=\"btn btn-large btn-success\" value=\"Submit\">\n" +
+            "</form>\n" +
+            "</div>\n" +
+            "</div>\n" +
+            "<hr>\n" +
+            "<div style=\"background-color:WhiteSmoke; padding:30px; margin:20px;\">\n" +
+            "<h4>Create Account</h4>\n" +
+            "<p>Creates a new account</p>\n" +
             "<hr>\n" +
             "</div> \n" +
             "<script data-cfasync=\"false\" src=\"/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js\"></script><script>\n" +

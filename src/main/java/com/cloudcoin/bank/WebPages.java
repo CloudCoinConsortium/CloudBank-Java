@@ -749,6 +749,51 @@ public class WebPages implements ErrorController {
         return Utils.createGson().toJson(stack);
     }
 
+    @RequestMapping(value = "/create_account", method = {RequestMethod.POST, RequestMethod.GET})
+    public String getChange(@RequestParam(required = false, value = "account") String account,
+                            @RequestParam(required = false, value = "pk") String key) {
+        ServiceResponse response = new ServiceResponse();
+        response.bankServer = "localhost";
+
+        Path passwordPath = Paths.get(FileSystem.PasswordFolder + account + ".txt");
+        String accountPathString = FileSystem.AccountFolder + key + File.separator;
+        Path accountPath = Paths.get(accountPathString);
+
+        if (getParameter(account).length() == 0 || getParameter(key).length() == 0 ||
+                Files.exists(passwordPath) || Files.exists(accountPath)) {
+            response.message = "Invalid account or password.";
+            new SimpleLogger().LogBadCall(Utils.createGson().toJson(response));
+            return Utils.createGson().toJson(response);
+        }
+
+        try {
+            byte[] passwordBytes = key.getBytes(StandardCharsets.UTF_8);
+            Files.write(passwordPath, passwordBytes, StandardOpenOption.CREATE_NEW);
+            Files.createDirectory(accountPath);
+            Files.createDirectory(Paths.get(accountPathString + FileSystem.DetectedPath));
+            Files.createDirectory(Paths.get(accountPathString + FileSystem.ExportPath));
+            Files.createDirectory(Paths.get(accountPathString + FileSystem.ReceiptsPath));
+            Files.createDirectory(Paths.get(accountPathString + FileSystem.SuspectPath));
+            Files.createDirectory(Paths.get(accountPathString + FileSystem.TrashPath));
+            Files.createDirectory(Paths.get(accountPathString + FileSystem.BankPath));
+            Files.createDirectory(Paths.get(accountPathString + FileSystem.FrackedPath));
+            Files.createDirectory(Paths.get(accountPathString + FileSystem.CounterfeitPath));
+            Files.createDirectory(Paths.get(accountPathString + FileSystem.LostPath));
+        } catch (IOException e) {
+            e.printStackTrace();
+            response.status = "fail";
+            response.message = "Error, could not create account. Please contact support.";
+            new SimpleLogger().LogBadCall(Utils.createGson().toJson(response));
+            return Utils.createGson().toJson(response);
+        }
+
+        response.status = "success";
+        response.message = "Account created.";
+        new SimpleLogger().LogBadCall(Utils.createGson().toJson(response));
+        return Utils.createGson().toJson(response);
+    }
+
+
     /* Methods */
 
     private String isAccountValid(String account) {
